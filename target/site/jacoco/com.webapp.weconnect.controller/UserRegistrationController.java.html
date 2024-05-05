@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserRegistrationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.controller</a> &gt; <span class="el_source">UserRegistrationController.java</span></div><h1>UserRegistrationController.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.controller;
+
+import com.webapp.weconnect.service.UserService;
+import com.webapp.weconnect.web.dto.UserRegistrationDto;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+
+@Controller
+@RequestMapping(&quot;/registration&quot;)
+public class UserRegistrationController {
+
+    private UserService userService;
+
+    /** Controller for the user registration
+     * @param userService the service class of user
+     * */
+
+    public UserRegistrationController(UserService userService) {
+<span class="fc" id="L24">        super();</span>
+<span class="fc" id="L25">        this.userService = userService;</span>
+<span class="fc" id="L26">    }</span>
+
+    /**
+     * Method for the user registration Dto to be used
+     * */
+    @ModelAttribute(&quot;user&quot;)
+    public UserRegistrationDto userRegistrationDto() {
+<span class="nc" id="L33">        return new UserRegistrationDto();</span>
+    }
+
+    /**
+     * Method to display the registration form to the user.
+     * So that they can register themselves in order to use the website.
+     * @param emailInUse
+     * @param model the model object, used to pass attributes back to the view layer.
+     * @return registration page where the user will enter their details
+     * */
+    @GetMapping
+    public String showRegistrationForm(@RequestParam(required = false, name = &quot;emailInUse&quot;) String emailInUse, Model model) {
+<span class="fc" id="L45">        model.addAttribute(&quot;emailInUse&quot;, emailInUse);</span>
+<span class="fc" id="L46">        return &quot;registration&quot;;</span>
+    }
+
+    /**
+     * Method to save the registration form of the user with user details.
+     * So that the user can be added to our list of users and can access the website.
+     * @param registrationDto the DTO for the user
+     * @param model the object, used to store the user details as per structure.
+     * @return registration page with success message or prompt the user to use another email.
+     * */
+    @PostMapping
+    public String registerUserAccount(@ModelAttribute(&quot;user&quot;) @Valid UserRegistrationDto registrationDto, BindingResult result, Model model) {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (result.hasErrors()) {</span>
+<span class="fc" id="L59">            return &quot;registration&quot;;</span>
+        }
+        try {
+<span class="fc" id="L62">            userService.save(registrationDto);</span>
+<span class="fc" id="L63">        } catch (DataIntegrityViolationException e) {</span>
+<span class="fc" id="L64">            return &quot;redirect:/registration?emailInUse=true&quot;;</span>
+<span class="fc" id="L65">        }</span>
+<span class="fc" id="L66">        return &quot;redirect:/registration?success&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

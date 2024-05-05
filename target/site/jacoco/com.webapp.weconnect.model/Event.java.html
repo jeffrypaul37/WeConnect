@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Event.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.model</a> &gt; <span class="el_source">Event.java</span></div><h1>Event.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.model;
+
+import javax.persistence.*;
+import java.util.Date;
+
+@Entity
+@Table(name = &quot;event&quot;)
+<span class="fc" id="L8">public class Event {</span>
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = &quot;title&quot;)
+    private String title;
+
+    @Lob
+    @Column(name = &quot;content&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String content;
+
+    @Lob
+    @Column(name = &quot;image&quot;, columnDefinition=&quot;LONGBLOB&quot;)
+    private byte[] image;
+
+    @Column(name = &quot;communityname&quot;)
+    private String communityName;
+
+    @Column(name = &quot;event_date&quot;)
+    private Date eventDate;
+
+    @Column(name = &quot;event_time&quot;)
+    private String eventTime;
+
+    @Column(name = &quot;max_capacity&quot;)
+    private Integer maxCapacity;
+
+    @Column(name = &quot;location&quot;)
+    private String location;
+
+    public Long getId() {
+<span class="nc" id="L41">        return id;</span>
+    }
+    public String getTitle() {
+<span class="fc" id="L44">        return title;</span>
+    }
+
+    public void setTitle(String title) {
+<span class="fc" id="L48">        this.title = title;</span>
+<span class="fc" id="L49">    }</span>
+
+    public String getContent() {
+<span class="nc" id="L52">        return content;</span>
+    }
+
+    public void setContent(String content) {
+<span class="fc" id="L56">        this.content = content;</span>
+<span class="fc" id="L57">    }</span>
+
+    public byte[] getEventImage() {
+<span class="fc" id="L60">        return image;</span>
+    }
+
+    public void setEventImage(byte[] image) {
+<span class="fc" id="L64">        this.image = image;</span>
+<span class="fc" id="L65">    }</span>
+
+    public String getCommunityname() {
+<span class="fc" id="L68">        return communityName;</span>
+    }
+
+    public void setCommunityname(String communityName) {
+<span class="fc" id="L72">        this.communityName = communityName;</span>
+<span class="fc" id="L73">    }</span>
+
+    public String getLocation() {
+<span class="nc" id="L76">        return location;</span>
+    }
+
+    public void setLocation(String location) {
+<span class="fc" id="L80">        this.location = location;</span>
+<span class="fc" id="L81">    }</span>
+
+    public Date getEventDate() {
+<span class="nc" id="L84">        return eventDate;</span>
+    }
+
+    public void setEventDate(Date eventDate) {
+<span class="fc" id="L88">        this.eventDate = eventDate;</span>
+<span class="fc" id="L89">    }</span>
+
+    public String getEventTime() {
+<span class="nc" id="L92">        return eventTime;</span>
+    }
+
+    public void setEventTime(String eventTime) {
+<span class="fc" id="L96">        this.eventTime = eventTime;</span>
+<span class="fc" id="L97">    }</span>
+
+    public int getMaxCapacity() {
+<span class="fc" id="L100">        return maxCapacity;</span>
+    }
+
+    public void setMaxCapacity(int maxCapacity) {
+<span class="fc" id="L104">        this.maxCapacity = maxCapacity;</span>
+<span class="fc" id="L105">    }</span>
+
+    public boolean hasImage() {
+<span class="fc bfc" id="L108" title="All 4 branches covered.">        return image != null &amp;&amp; image.length &gt; 0;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

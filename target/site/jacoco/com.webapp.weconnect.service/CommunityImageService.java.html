@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommunityImageService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.service</a> &gt; <span class="el_source">CommunityImageService.java</span></div><h1>CommunityImageService.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.service;
+
+import com.webapp.weconnect.model.CommunityImage;
+import com.webapp.weconnect.repository.CommunityImageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class CommunityImageService {
+
+    private final CommunityImageRepository communityImageRepository;
+
+    /**
+     * Constructs a CommunityImageService with the necessary repository.
+     * @param communityImageRepository The repository responsible for community image data operations.
+     * */
+    @Autowired
+<span class="fc" id="L19">    public CommunityImageService(CommunityImageRepository communityImageRepository) {</span>
+<span class="fc" id="L20">        this.communityImageRepository = communityImageRepository;</span>
+<span class="fc" id="L21">    }</span>
+
+    /**
+     * Retrieves the image data for a given community by its name.
+     * If the community or its image data does not exist, this method returns null.
+     * Otherwise, it returns the byte array representing the image associated with the community.
+     * @param communityName The name of the community whose image data is to be retrieved.
+     * @return A byte array containing the image data if available; otherwise, null.
+     * */
+    public byte[] getImageStringByCommunityName(String communityName) {
+<span class="fc" id="L31">        CommunityImage communityImage = communityImageRepository.findByCommunityName(communityName);</span>
+
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (communityImage == null) {</span>
+<span class="fc" id="L34">            return null;</span>
+        }
+
+<span class="fc" id="L37">        byte[] imageData = communityImage.getCommunityImage();</span>
+<span class="pc bpc" id="L38" title="2 of 4 branches missed.">        if (imageData == null || imageData.length == 0) {</span>
+<span class="nc" id="L39">            return null;</span>
+        }
+
+<span class="fc" id="L42">        return imageData;</span>
+    }
+
+    /**
+     * To fetch the description of community by its name. This fetches the Image entity associated with the community name
+     * @param communityName The name of the community whose description is to be retrieved.
+     * @return The description of the community.
+     * */
+    public String getDescriptionByCommunityName(String communityName) {
+<span class="fc" id="L51">        CommunityImage communityDescription= communityImageRepository.findByCommunityName(communityName);</span>
+<span class="fc" id="L52">            return communityDescription.getCommunityDescription();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

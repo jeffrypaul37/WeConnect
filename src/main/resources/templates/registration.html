@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="ISO-8859-1">
+    <title>Registration</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link th:href="@{/css/registered?.css}" rel="stylesheet" />
+<!-- <link rel="stylesheet" type="text/css" href="/static/css/registration.css"/> -->
+    <link rel="stylesheet" type="text/css" href="/css/registration.css"/>
+ 
+</head>
+<body>
+ 
+<br><br>
+ 
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+ 
+            <div th:if="${param.success}">
+                <div class="alert alert-info">Verification link has been sent to your email id. Click the link to complete registration.</div>
+            </div>
+ 
+            <h1>WeConnect</h1>
+ 
+            <form th:action="@{/registration}" method="post" th:object="${user}">
+                <div class="form-group">
+                    <input
+                            id="firstName" class="form-control" th:field="*{firstName}"
+                            placeholder="First Name"
+                           required autofocus="autofocus" />
+                </div>
+ 
+                <div class="form-group">
+                    <input
+                            id="lastName" class="form-control" th:field="*{lastName}"
+                            placeholder="Last Name"
+                        required autofocus="autofocus" />
+                </div>
+ 
+                <div class="form-group">
+                    <input
+                        id="email" class="form-control"  type="email" th:field="*{email}" required
+                        placeholder="Email"
+                        autofocus="autofocus" />
+                </div>
+ 
+                <div class="form-group">
+                    <input
+                        id="password" class="form-control" type="password"
+                        th:field="*{password}" required autofocus="autofocus"
+                        placeholder="Password"
+                        pattern="(?=.*\d)(?=.*[a-z]).{8,}"
+                        title="Password must be at least 8 characters long and contain at least one letter and one number"/>
+                </div>
+ 
+                <div class="form-group">
+                    <input
+                        id="confirmPassword" class="form-control" type="password"
+                        placeholder="Confirm Password"
+                        required autofocus="autofocus" />
+                </div>
+ 
+                <div class="form-group submitButton">
+                    <button type="submit" class="btn btn-success" onclick="return validatePassword()">Register</button>
+                </div>
+ 
+                <div class="form-group Login">
+                    <span>Already registered? <a href="/" th:href="@{/login}">Login
+                        here</a></span>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    function validatePassword() {
+        var password = document.getElementById("password").value;
+        var confirmPassword = document.getElementById("confirmPassword").value;
+        if (password != confirmPassword) {
+            alert("Passwords do not match.");
+            return false;
+        }
+        return true;
+    }
+</script>
+<script th:if="${emailInUse}">
+    alert("User already exists!");
+</script>
+</body>
+</html>

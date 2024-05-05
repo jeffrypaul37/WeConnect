@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Community.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.model</a> &gt; <span class="el_source">Community.java</span></div><h1>Community.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.model;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name = &quot;community&quot;,
+        uniqueConstraints = {
+                @UniqueConstraint(name = &quot;unique_community&quot;, columnNames = {&quot;name&quot;, &quot;created_by&quot;})
+        })
+<span class="fc" id="L10">public class Community {</span>
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @Column(name = &quot;creator_id&quot;)
+    private Long creatorId;
+
+    @Column(name = &quot;creator_email&quot;)
+    private String creatorEmail;
+
+    @Column(name = &quot;created_by&quot;)
+    private String createdBy;
+
+    @Column(name = &quot;is_leader&quot;)
+    private Boolean isLeader;;
+
+    @ManyToOne
+    @JoinColumn(name = &quot;creator_id&quot;, referencedColumnName = &quot;id&quot;, insertable = false, updatable = false)
+    private User creator;
+
+<span class="fc" id="L34">    @Column(name = &quot;is_approved&quot;)</span>
+<span class="fc" id="L35">    private Boolean isApproved = false;</span>
+
+    // getter和setter
+    public Boolean getIsApproved() {
+<span class="fc" id="L39">        return isApproved;</span>
+    }
+
+    public void setIsApproved(Boolean isApproved) {
+<span class="fc" id="L43">        this.isApproved = isApproved;</span>
+<span class="fc" id="L44">    }</span>
+
+    public String getName() {
+<span class="fc" id="L47">        return name;</span>
+    }
+
+<span class="fc" id="L50">    public Long getId() {return id;}</span>
+
+    public void setName(String name) {
+<span class="fc" id="L53">        this.name = name;</span>
+<span class="fc" id="L54">    }</span>
+
+    public void setCreatedBy(String createdBy) {
+<span class="fc" id="L57">        this.createdBy = createdBy;</span>
+<span class="fc" id="L58">    }</span>
+
+    public String getCreatedBy() {
+<span class="fc" id="L61">        return createdBy;</span>
+    }
+
+    public Boolean getIsLeader() {
+<span class="fc" id="L65">        return isLeader;</span>
+    }
+
+    public void setIsLeader(Boolean isLeader) {
+<span class="fc" id="L69">        this.isLeader = isLeader;</span>
+<span class="fc" id="L70">    }</span>
+
+<span class="fc" id="L72">    public void setId(long id) {this.id = id;</span>
+<span class="fc" id="L73">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

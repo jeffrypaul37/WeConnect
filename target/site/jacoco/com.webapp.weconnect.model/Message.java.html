@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Message.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.model</a> &gt; <span class="el_source">Message.java</span></div><h1>Message.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.model;
+
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = &quot;message&quot;)
+<span class="fc" id="L9">public class Message {</span>
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(name = &quot;title&quot;)
+    private String title;
+
+    @Lob
+    @Column(name = &quot;content&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String content;
+
+    @Lob
+    @Column(name = &quot;image&quot;, columnDefinition=&quot;LONGBLOB&quot;)
+    private byte[] image;
+
+<span class="fc" id="L25">    @OneToMany(mappedBy = &quot;message&quot;, cascade = CascadeType.ALL)</span>
+    private List&lt;Comment&gt; comments = new ArrayList&lt;&gt;();
+
+    @Column(name = &quot;communityname&quot;)
+    private String communityName;
+    public Long getId() {
+<span class="fc" id="L31">        return id;</span>
+    }
+    public String getTitle() {
+<span class="fc" id="L34">        return title;</span>
+    }
+
+    public void setTitle(String title) {
+<span class="fc" id="L38">        this.title = title;</span>
+<span class="fc" id="L39">    }</span>
+
+    public String getContent() {
+<span class="nc" id="L42">        return content;</span>
+    }
+
+    public void setContent(String content) {
+<span class="fc" id="L46">        this.content = content;</span>
+<span class="fc" id="L47">    }</span>
+
+    public byte[] getPostImage() {
+<span class="fc" id="L50">        return image;</span>
+    }
+
+    public void setPostImage(byte[] image) {
+<span class="fc" id="L54">        this.image = image;</span>
+<span class="fc" id="L55">    }</span>
+
+    public String getCommunityname() {
+<span class="fc" id="L58">        return communityName;</span>
+    }
+
+    public void setCommunityname(String communityName) {
+<span class="fc" id="L62">        this.communityName = communityName;</span>
+<span class="fc" id="L63">    }</span>
+    public boolean hasImage() {
+<span class="fc bfc" id="L65" title="All 4 branches covered.">        return image != null &amp;&amp; image.length &gt; 0;</span>
+    }
+
+    public List&lt;Comment&gt; getComments() {
+<span class="nc" id="L69">        return comments;</span>
+    }
+
+    public void setComments(List&lt;Comment&gt; comments) {
+<span class="nc" id="L73">        this.comments = comments;</span>
+<span class="nc" id="L74">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.controller</a> &gt; <span class="el_source">AdminController.java</span></div><h1>AdminController.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.controller;
+
+import com.webapp.weconnect.model.Community;
+import com.webapp.weconnect.model.User;
+import com.webapp.weconnect.repository.CommunityRepository;
+import com.webapp.weconnect.service.CommunityImageService;
+import com.webapp.weconnect.service.CommunityService;
+import com.webapp.weconnect.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.Collections;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.core.io.Resource;
+
+
+
+@Controller
+public class AdminController {
+    @Autowired
+    private CommunityService communityService;
+    @Autowired
+    private UserService userService;
+    private final CommunityRepository communityRepository;
+    private final CommunityImageService communityImageService;
+<span class="fc" id="L51">    public AdminController(CommunityRepository communityRepository, CommunityImageService communityImageService) {</span>
+<span class="fc" id="L52">        this.communityRepository = communityRepository;</span>
+<span class="fc" id="L53">        this.communityImageService = communityImageService;</span>
+<span class="fc" id="L54">    }</span>
+
+
+
+    @Value(&quot;${file.storage.location}&quot;)
+    private String fileStorageLocation;
+
+    /**
+     * Display the pending communities to the admin for approval.This way the admin has all the list at one place to review
+     * @param model the model object used to pass data to the view layer.
+     * @param session session object used to store community.
+     * @return pending community admin page
+     * */
+    @GetMapping(&quot;/admin/pendingCommunities&quot;)
+    public String showPendingCommunities(Model model, HttpSession session) {
+<span class="fc" id="L69">        List&lt;Community&gt; allPendingCommunities = communityService.listPendingCommunities();</span>
+
+<span class="fc" id="L71">        List&lt;Community&gt; pendingCommunities = allPendingCommunities.stream()</span>
+<span class="fc" id="L72">                .filter(community -&gt; Boolean.TRUE.equals(community.getIsLeader()))</span>
+<span class="fc" id="L73">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L75">        Map&lt;Long, String&gt; creatorNames = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L76">        Map&lt;String, List&lt;String&gt;&gt; communityFiles = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        for (Community community : pendingCommunities) {</span>
+<span class="fc" id="L79">            String email = community.getCreatedBy();</span>
+<span class="fc" id="L80">            User user = userService.findByEmail(email);</span>
+<span class="fc" id="L81">            String fullName = user.getFirstName() + &quot; &quot; + user.getLastName();</span>
+<span class="fc" id="L82">            creatorNames.put(community.getId(), fullName);</span>
+
+<span class="fc" id="L84">            String directoryPath = Paths.get(fileStorageLocation, community.getName()).toString();</span>
+<span class="fc" id="L85">            Path dirPath = Paths.get(directoryPath);</span>
+<span class="pc bpc" id="L86" title="3 of 4 branches missed.">            if (Files.exists(dirPath) &amp;&amp; Files.isDirectory(dirPath)) {</span>
+                try {
+<span class="nc" id="L88">                    List&lt;String&gt; filesInDirectory = Files.list(dirPath)</span>
+<span class="nc" id="L89">                            .map(Path::getFileName)</span>
+<span class="nc" id="L90">                            .map(Path::toString)</span>
+<span class="nc" id="L91">                            .collect(Collectors.toList());</span>
+<span class="nc" id="L92">                    communityFiles.put(community.getName(), filesInDirectory);</span>
+<span class="nc" id="L93">                } catch (Exception e) {</span>
+<span class="nc" id="L94">                    e.printStackTrace();</span>
+<span class="nc" id="L95">                }</span>
+            }
+<span class="fc" id="L97">        }</span>
+
+<span class="fc" id="L99">        session.setAttribute(&quot;communityFiles&quot;, communityFiles);</span>
+
+<span class="fc" id="L101">        model.addAttribute(&quot;pendingCommunities&quot;, pendingCommunities);</span>
+<span class="fc" id="L102">        model.addAttribute(&quot;creatorNames&quot;, creatorNames);</span>
+<span class="fc" id="L103">        return &quot;adminPendingCommunities&quot;;</span>
+    }
+
+    /**
+     * Download the ID associated with community that was uploaded the by community leader as ID proof.
+     * @param communityName the community for which the ID proof was uploaded
+     * @param request the object representing the HTTP request.
+     * @return response entity containing the ID file content as a byte array, along with appropriate header for downloading the file
+     * */
+    @GetMapping(&quot;/downloadIdFile&quot;)
+    public ResponseEntity&lt;byte[]&gt; downloadIdFile(@RequestParam(&quot;communityName&quot;) String communityName, HttpServletRequest request) {
+<span class="fc" id="L114">        HttpSession session = request.getSession();</span>
+<span class="fc" id="L115">        Map&lt;String, List&lt;Map&lt;String, Object&gt;&gt;&gt; communityFiles =</span>
+<span class="fc" id="L116">                (Map&lt;String, List&lt;Map&lt;String, Object&gt;&gt;&gt;) session.getAttribute(&quot;communityFiles&quot;);</span>
+
+<span class="pc bpc" id="L118" title="2 of 4 branches missed.">        if (communityFiles != null &amp;&amp; communityFiles.containsKey(communityName)) {</span>
+<span class="fc" id="L119">            List&lt;Map&lt;String, Object&gt;&gt; files = communityFiles.get(communityName);</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">            if (!files.isEmpty()) {</span>
+<span class="fc" id="L121">                Map&lt;String, Object&gt; fileData = files.get(0);</span>
+<span class="fc" id="L122">                byte[] idFileContent = (byte[]) fileData.get(&quot;content&quot;);</span>
+<span class="fc" id="L123">                String idFileName = (String) fileData.get(&quot;name&quot;);</span>
+
+<span class="fc" id="L125">                return ResponseEntity.ok()</span>
+<span class="fc" id="L126">                        .header(HttpHeaders.CONTENT_DISPOSITION, &quot;attachment; filename=\&quot;&quot; + idFileName + &quot;\&quot;&quot;)</span>
+<span class="fc" id="L127">                        .body(idFileContent);</span>
+            }
+        }
+
+<span class="nc" id="L131">        return ResponseEntity.notFound().build();</span>
+    }
+
+    /**
+     * Approve the community after reviewing the ID proof. This way the admin approves and the community is now accessible to users.
+     * @return id the ID
+     * @return the pending approval page after redirect
+     * */
+    @PostMapping(&quot;/admin/approveCommunity/{id}&quot;)
+    public String approveCommunity(@PathVariable Long id) {
+<span class="fc" id="L141">        communityService.approveCommunity(id);</span>
+<span class="fc" id="L142">        return &quot;redirect:/admin/pendingCommunities&quot;;</span>
+    }
+
+    /**
+     * In event if the admin rejects the community approval. This can be due to violation of laws or inappropriate content.
+     * @param id the ID of the path community
+     * @return pending community page for admin redirect
+     * */
+    @PostMapping(&quot;/admin/rejectCommunity/{id}&quot;)
+    public String rejectCommunity(@PathVariable Long id) {
+<span class="fc" id="L152">        communityService.rejectCommunity(id);</span>
+<span class="fc" id="L153">        return &quot;redirect:/admin/pendingCommunities&quot;;</span>
+    }
+
+    /**
+     * Method to get the image for the community approval. This is because the admin must see the community image before making decision
+     * @param communityName the name of community that needs approval
+     * @return response entity with image, headers as well as status
+     * */
+    @GetMapping(&quot;/admin/getImage&quot;)
+    public ResponseEntity&lt;byte[]&gt; getImage(@RequestParam(&quot;communityName&quot;) String communityName) {
+<span class="fc" id="L163">        byte[] imageData = communityImageService.getImageStringByCommunityName(communityName);</span>
+<span class="fc" id="L164">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L165">        headers.setContentType(MediaType.IMAGE_JPEG);</span>
+<span class="fc" id="L166">        return new ResponseEntity&lt;&gt;(imageData, headers, HttpStatus.OK);</span>
+    }
+
+    /**
+     * Download the ID proof that the community leader has uploaded. This makes it easier for admin to make his decision.
+     * @param communityName the name of community
+     * @param fileName the name of the ID proof file that was submitted
+     * @return appropriate response entity
+     * */
+    @GetMapping(&quot;/admin/downloadIdFile&quot;)
+    public ResponseEntity&lt;Resource&gt; downloadIdFile(@RequestParam(&quot;communityName&quot;) String communityName,
+                                                   @RequestParam(&quot;fileName&quot;) String fileName) {
+<span class="fc" id="L178">        Path filePath = Paths.get(fileStorageLocation).resolve(communityName).resolve(fileName).normalize();</span>
+
+        try {
+<span class="fc" id="L181">            Resource resource = new UrlResource(filePath.toUri());</span>
+<span class="pc bpc" id="L182" title="2 of 4 branches missed.">            if (resource.exists() || resource.isReadable()) {</span>
+<span class="nc" id="L183">                String contentType = Files.probeContentType(filePath);</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                if (contentType == null) {</span>
+<span class="nc" id="L185">                    contentType = &quot;application/octet-stream&quot;;</span>
+                }
+<span class="nc" id="L187">                return ResponseEntity.ok()</span>
+<span class="nc" id="L188">                        .contentType(MediaType.parseMediaType(contentType))</span>
+<span class="nc" id="L189">                        .header(HttpHeaders.CONTENT_DISPOSITION, &quot;attachment; filename=\&quot;&quot; + resource.getFilename() + &quot;\&quot;&quot;)</span>
+<span class="nc" id="L190">                        .body(resource);</span>
+            } else {
+<span class="fc" id="L192">                return ResponseEntity.notFound().build();</span>
+            }
+<span class="nc" id="L194">        } catch (IOException e) {</span>
+<span class="nc" id="L195">            e.printStackTrace();</span>
+<span class="nc" id="L196">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();</span>
+        }
+    }
+
+
+    /**
+     * Render the admin home page upon successful login by the admin
+     * @param model the model object that transfers the details
+     * @return the admin home page
+     * */
+    @GetMapping(&quot;/admin&quot;)
+    public String adminHome(Model model) {
+<span class="fc" id="L208">        List&lt;Community&gt; approvedCommunities = communityService.listApprovedCommunities();</span>
+<span class="fc" id="L209">        model.addAttribute(&quot;communities&quot;, approvedCommunities);</span>
+<span class="fc" id="L210">        return &quot;admin&quot;;</span>
+    }
+
+    /**
+     * Handle the logout event for the admin panel
+     * @return upon successful logout, redirect the admin to the login page.
+     * */
+    @GetMapping(&quot;/admin/logout&quot;)
+    public String adminLogout(){
+<span class="nc" id="L219">        return &quot;redirect:/login&quot;;</span>
+    }
+
+    /**
+     * Method to handle login process of the admin. This way the admin can access the services using the company credentials defined.
+     * @param username the username of admin
+     * @param password admin password
+     * @param redirectAttributes object used to add attributes for redirection.
+     * */
+    @PostMapping(&quot;/admin/login&quot;)
+    public String adminLogin(@RequestParam(&quot;username&quot;) String username,
+                             @RequestParam(&quot;password&quot;) String password,
+                             RedirectAttributes redirectAttributes) {
+<span class="fc" id="L232">        final String hardcodedAdminUsername = &quot;weconnectadmin@gmail.com&quot;;</span>
+<span class="fc" id="L233">        final String hardcodedAdminPassword = &quot;admin123456&quot;;</span>
+
+<span class="pc bpc" id="L235" title="1 of 4 branches missed.">        if (hardcodedAdminUsername.equals(username) &amp;&amp; hardcodedAdminPassword.equals(password)) {</span>
+            // Successful admin login
+<span class="fc" id="L237">            return &quot;redirect:/admin&quot;; // Redirect to the admin homepage</span>
+        } else {
+            // Failed admin login
+<span class="fc" id="L240">            redirectAttributes.addFlashAttribute(&quot;error&quot;, &quot;Invalid admin username or password!&quot;);</span>
+<span class="fc" id="L241">            return &quot;redirect:/login&quot;; // Redirect back to the login page with an error message</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

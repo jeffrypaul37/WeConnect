@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.controller</a> &gt; <span class="el_source">SearchController.java</span></div><h1>SearchController.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.controller;
+
+import com.webapp.weconnect.model.Community;
+import com.webapp.weconnect.service.CommunityService;
+import com.webapp.weconnect.service.SearchService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/api/search&quot;)
+public class SearchController {
+    private final SearchService searchService;
+    private final CommunityService communityService;
+
+    @Autowired
+<span class="fc" id="L21">    public SearchController(SearchService searchService, CommunityService communityService) {</span>
+<span class="fc" id="L22">        this.searchService = searchService;</span>
+<span class="fc" id="L23">        this.communityService = communityService;</span>
+<span class="fc" id="L24">    }</span>
+
+    /**
+     * Method to search the communities by their name.
+     * So that when a user just knows the community name, then also they can search it based on the name of community.
+     * This makes it easier for them to locate their favourite community.
+     * @param title the title of the community that needs to be searched.
+     * @return a response on the status of the result.
+     * */
+    @GetMapping
+    public ResponseEntity&lt;List&lt;Community&gt;&gt; searchByTitle(@RequestParam String title) {
+
+<span class="fc" id="L36">        List&lt;Community&gt; approvedCommunities = communityService.listApprovedCommunities();</span>
+<span class="fc" id="L37">        List&lt;Community&gt; communities = searchService.searchByTitle(title);</span>
+
+<span class="fc" id="L39">        List&lt;Community&gt; uniqueCommunities = communities.stream()</span>
+<span class="fc" id="L40">                .filter(community -&gt; Boolean.TRUE.equals(community.getIsLeader()))</span>
+<span class="fc" id="L41">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L43">        Set&lt;String&gt; approvedCommunityNames = approvedCommunities.stream()</span>
+<span class="fc" id="L44">                .map(Community::getName)</span>
+<span class="fc" id="L45">                .collect(Collectors.toSet());</span>
+
+<span class="fc" id="L47">        List&lt;Community&gt; intersection = uniqueCommunities.stream()</span>
+<span class="fc" id="L48">                .filter(community -&gt; approvedCommunityNames.contains(community.getName()))</span>
+<span class="fc" id="L49">                .collect(Collectors.toList());</span>
+<span class="fc" id="L50">        return ResponseEntity.ok(intersection);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

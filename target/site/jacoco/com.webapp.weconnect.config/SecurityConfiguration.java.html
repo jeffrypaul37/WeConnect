@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecurityConfiguration.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.config</a> &gt; <span class="el_source">SecurityConfiguration.java</span></div><h1>SecurityConfiguration.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import com.webapp.weconnect.service.UserService;
+
+@Configuration
+@EnableWebSecurity
+<span class="fc" id="L17">public class SecurityConfiguration extends WebSecurityConfigurerAdapter {</span>
+	@Autowired
+	private UserService userService;
+
+	@Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+<span class="fc" id="L23">        return new BCryptPasswordEncoder();</span>
+    }
+
+	@Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+<span class="fc" id="L28">        DaoAuthenticationProvider auth = new DaoAuthenticationProvider();</span>
+<span class="fc" id="L29">        auth.setUserDetailsService(userService);</span>
+<span class="fc" id="L30">        auth.setPasswordEncoder(passwordEncoder());</span>
+<span class="fc" id="L31">        return auth;</span>
+    }
+	
+	@Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+<span class="fc" id="L36">        auth.authenticationProvider(authenticationProvider());</span>
+<span class="fc" id="L37">    }</span>
+	
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+<span class="fc" id="L41">		http.csrf().disable().authorizeRequests().antMatchers(</span>
+				 &quot;/registration**&quot;,
+	                &quot;/js/**&quot;,
+	                &quot;/css/**&quot;,
+	                &quot;/img/**&quot;,
+						&quot;/images/**&quot;,
+						&quot;/communities**&quot;,
+						&quot;/community**&quot;,
+						&quot;/static/**&quot;,
+						&quot;/reset_password&quot;,
+						&quot;/password_request&quot;,
+						&quot;/home/profile&quot;,
+						&quot;/about&quot;,
+						&quot;/admin/login&quot;,
+						&quot;/admin**&quot;,
+<span class="fc" id="L56">						&quot;/admin/**&quot;).permitAll()</span>
+<span class="fc" id="L57">		.anyRequest().authenticated()</span>
+<span class="fc" id="L58">		.and()</span>
+<span class="fc" id="L59">		.formLogin()</span>
+<span class="fc" id="L60">		.loginPage(&quot;/login&quot;)</span>
+<span class="fc" id="L61">		.permitAll()</span>
+<span class="fc" id="L62">		.and()</span>
+<span class="fc" id="L63">		.logout()</span>
+<span class="fc" id="L64">		.invalidateHttpSession(true)</span>
+<span class="fc" id="L65">		.clearAuthentication(true)</span>
+<span class="fc" id="L66">		.logoutRequestMatcher(new AntPathRequestMatcher(&quot;/logout&quot;))</span>
+<span class="fc" id="L67">		.logoutSuccessUrl(&quot;/login?logout&quot;)</span>
+<span class="fc" id="L68">		.permitAll();</span>
+<span class="fc" id="L69">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

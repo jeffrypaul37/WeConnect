@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.example.weconnect.weConnectApp.controller.AdminControllerTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.636 s - in com.example.weconnect.weConnectApp.controller.AdminControllerTest

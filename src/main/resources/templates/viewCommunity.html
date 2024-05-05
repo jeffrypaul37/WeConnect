@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${communityName}"></title>
+    <link rel="icon" type="image/x-icon" href="../images/logo.png">
+    <link th:href="@{/css/communityStyles.css}" rel="stylesheet" />
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+          crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var communityName = /*[[${communityName}]]*/ '';
+        /*]]>*/
+    </script>
+
+</head>
+
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header" style="margin-left: -20px;">
+            <a class="navbar-brand" href="#">
+                <img src="../images/logo.png" style="height: 20px; width: auto;">
+            </a>
+            <button type="button" class="navbar-toggle collapsed"
+                    data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+                    aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span> <span
+                    class="icon-bar"></span> <span class="icon-bar"></span> <span
+                    class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#" th:href="@{/}">Home</a>
+            <a class="navbar-brand" href="#" th:href="@{/communities}">My Communities</a>
+            <a class="navbar-brand" href="#" th:href="@{/profile/view}">Profile</a>
+            <a class="navbar-brand" href="#" th:href="@{/about}">About Us</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<style>
+    @media (max-width: 767px) {
+        .navbar-brand:nth-last-child(-n+2) {
+            display: none;
+        }
+    }
+</style>
+
+
+<br><br>
+
+<div class="community-grid-container">
+<div class="header-container">
+    <div class="avatar-container">
+        <img th:if="${@communityImageService.getImageStringByCommunityName(communityName)}"
+             th:src="@{'/getImage?communityName=' + ${communityName}}"
+             alt="Community Image"
+             class="avatar"
+             onclick="openModal()">
+        <div th:unless="${@communityImageService.getImageStringByCommunityName(communityName)}">
+            <img src="https://source.unsplash.com/random/150x150" alt="Sample Image" class="avatar" onclick="openModal()">
+        </div>
+        <div id="imageModal" class="modal">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <img th:if="${@communityImageService.getImageStringByCommunityName(communityName)}"
+                 th:src="@{'/getImage?communityName=' + ${communityName}}"
+                 alt="Community Image">
+            <div th:unless="${@communityImageService.getImageStringByCommunityName(communityName)}">
+                <img src="https://source.unsplash.com/random/150x150" alt="Sample Image" class="avatar" onclick="openModal()">
+            </div>
+        </div>
+    </div>
+
+    <div class="community-info">
+        <h1 style="color: #fff;" th:text="${communityName}"></h1>
+        <br>
+        <button onclick="openMembersModal()" class="view-members-button">View Members</button>
+        <form action="/joinCommunity" method="post" th:if="!${joinedCommunityNames.contains(communityName)}" >
+                <input type="hidden" name="communityName" th:value="${communityName}" />
+                <button type="submit" class="join-button" >Join</button>
+            </form>
+            <form action="/leaveCommunity" method="post" th:if="${joinedCommunityNames.contains(communityName) and !isLeader}">
+                <input type="hidden" name="communityName" th:value="${communityName}" />
+                <button type="submit" class="join-button">Leave</button>
+            </form>
+
+        <div id="membersModal" class="modal">
+            <span class="close" onclick="closeMembersModal()">&times;</span>
+            <div class="members-content">
+                <h2>Members</h2>
+                <div class="members-list">
+                    <ul>
+                        <li th:each="member : ${memberProfiles}" class="member">
+                            <div class="member_photo">
+                                <img th:if="${member.profile_photo != null}" th:src="'data:image/jpeg;base64,' + ${T(org.springframework.util.Base64Utils).encodeToString(member.profile_photo)}" alt="Profile Picture" />
+                                <img th:unless="${member.profile_photo != null}" th:src="@{/images/avatardefault_92824.png}" />
+                            </div>
+                            <div class="member_name">
+                                <span th:text="${member.firstName + ' ' + member.lastName}" />
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="blog-posts">
+        <h1 th:text="${@communityImageService.getDescriptionByCommunityName(communityName)}" style="text-align: justify; width: 100%; font-size: 20px; color: #fff;"></h1>
+    </div>
+
+    <div class="blog-posts">
+        <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active"><a href="#blogs" aria-controls="blogs" role="tab" data-toggle="tab">Blogs</a></li>
+            <li th:if="${joinedCommunityNames.contains(communityName)}" role="presentation"><a href="#events" aria-controls="events" role="tab" data-toggle="tab">Events</a></li>
+            <li th:if="${joinedCommunityNames.contains(communityName)}" role="presentation"><a href="#donations" aria-controls="donations" role="tab" data-toggle="tab">Donations</a></li>
+
+        </ul>
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="blogs">
+                <div th:if="${isLeader}">
+                    <div class="header-container">
+                        <button class="create-community-button" onclick="openCreatePostModal()" style="margin-right: 10px;">Create Blog</button>
+                    </div>
+                </div>
+
+                <br>
+
+                <div th:each="message : ${messages}" class="linkedin-post">
+                    <div class="post-content">
+                        <h1 th:text="${message.title}"></h1>
+                        <div th:if="${@postService.getPostImageById(message.id)?.length > 0}">
+                            <img th:src="@{'/getPostImage?id=' + ${message.id}}" alt="Post Image">
+                        </div>
+                        <br>
+                        <p th:text="${message.content}" style="text-align: justify; width: 100%;"></p>
+                    </div>
+                    <div th:if="${isLeader}" class="post-footer">
+                        <button class="edit-btn">Edit</button>
+                        <form action="/editPost" method="post" class="edit-form" style="display: none;" enctype="multipart/form-data">
+                            <input type="hidden" name="postId" th:value="${message.id}" />
+                            <label for="editPostTitle">Edit Title:</label>
+                            <input type="text" id="editPostTitle" name="newTitle" th:value="${message.title}" />
+                            <br>
+                            <label for="editPostContent">Edit Content:</label>
+                            <textarea name="newContent" id="editPostContent" rows="4" cols="50" required class="textarea-fit-width" th:text="${message.content}"></textarea>
+                            <br>
+                            <label for="postImage">Update Image:</label>
+                            <input type="file" id="editPostImage" name="postImage" accept="image/*" onchange="validateEditImageSize()">
+                            <br>
+                            <input type="checkbox" id="deleteImageCheckbox" name="deleteImage">
+                            <label for="deleteImageCheckbox">Delete Image</label>
+                            <span id="editImageSizeError" style="color: red; display: none;">Image dimensions must be above 1920 x 1280 pixels.</span>
+                            <br>
+                            <button type="submit" class="save-btn">Save</button>
+                            <button type="submit" formaction="/deletePost" formmethod="post" class="delete-btn">Delete</button>
+                        </form>
+                    </div>
+                    <div class="comment_section">
+                        <h2>Comments</h2>
+                        <!-- Display comments for this blog post -->
+                        <div class="user-avatar">
+                            <!--                            <img th:src="@{/images/avatardefault_92824.jpg}" alt="User Avatar">-->
+                        </div>
+                        <div class="comment_container">
+                            <div th:each="comment : ${commentsMap[message.id]}">
+                                <p>
+                                <div class="comment_content">
+                                    <!--                                        <img th:src="@{/images/avatardefault_92824.png}" alt="User Avatar">-->
+                                    <img th:if="${comment.user.profile_photo != null}" th:src="'data:image/jpeg;base64,' + ${T(org.springframework.util.Base64Utils).encodeToString(comment.user.profile_photo)}" alt="Profile Picture" />
+                                    <img th:unless="${comment.user.profile_photo != null}" th:src="@{/images/avatardefault_92824.png}" alt="Default Avatar">
+                                    <span class="user-name" th:text="${comment.user.firstName}"></span>
+                                    <!--                                <span th:text="${comment.createdAt}"></span>-->
+                                    <span class="timestamp" th:text="${comment.createdAt.year} + '-' + ${comment.createdAt.monthValue} + '-' + ${comment.createdAt.dayOfMonth}"></span>&nbsp;
+                                    &nbsp;&nbsp;
+                                    <span class="timestamp" th:text="${comment.createdAt.hour} + ':' + ${comment.createdAt.minute} + ':' + ${comment.createdAt.second}"></span>
+                                </div>
+
+                                <span class="content" th:text="${comment.content}"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="community-grid-container" style="margin-top: -10px; margin-left:-5px">
+                        <th:block th:if="${isMember}">
+                            <!-- Form for adding comments -->
+                            <form th:action="@{/create-comment}" method="post" class="comment-form">
+                                <div class="row">
+                                    <div class="col align-items-top"> <!-- Added align-items-top class -->
+                                        <textarea name="content" rows="1" cols="50" placeholder="Type your comment..." required></textarea>
+                                        <button type="submit">Comment</button>
+                                        <input type="hidden" name="messageId" th:value="${message.id}" />
+                                        <input type="hidden" name="communityName" th:value="${communityName}" />
+                                    </div>
+                                </div>
+                            </form>
+                        </th:block>
+                    </div>
+
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="events">
+                <div th:if="${isLeader}">
+                    <div class="header-container">
+                        <button class="create-community-button" onclick="openCreateEventModal()">Host Event</button>
+                    </div>
+                </div>
+
+                <br>
+
+                <div th:each="event : ${events}" class="linkedin-post">
+                    <div class="post-content">
+                        <h1 th:text="${event.title}"></h1>
+                        <div th:if="${@eventService.getEventImageById(event.id)?.length > 0}">
+                            <img th:src="@{'/getEventImage?id=' + ${event.id}}" alt="Post Image">
+                        </div>
+                        <br>
+                        <p th:text="${event.content}" style="text-align: justify; width: 100%;"></p>
+                    </div>
+
+                        <div th:if="${!isLeader && joinedCommunityNames.contains(communityName)}" class="post-footer">
+                            <button class="edit-btn">View Details</button>
+                            <br><br>
+                            <form action="/joinEvent" method="post" class="edit-form" style="display: none;" enctype="multipart/form-data">
+                                <input type="hidden" name="communityName" th:value="${communityName}" />
+                                <input type="hidden" name="eventId" th:value="${event.id}" />
+                                <input type="hidden" name="eventName" th:value="${event.title}" />
+                                <input type="hidden" name="eventDate" th:value="${#dates.format(event.eventDate, 'MMM dd, yyyy')}" />
+                                <input type="hidden" name="eventTime" th:value="${event.eventTime}" />
+                                <input type="hidden" name="eventLocation" th:value="${event.location}" />
+                                <span>Location: <span th:text="${event.location}"></span></span>
+                                <br>
+                                <span>Date: <span th:text="${#dates.format(event.eventDate, 'dd-MM-yyyy')}"></span></span>
+                                <br>
+                                <span>Time: <span th:text="${event.eventTime}"></span></span>
+                                <br>
+                                <span>Seats Remaining: <span th:text="${event.maxCapacity}"></span></span>
+                                <br><br>
+                                <button th:if="${!joinedEventNames.contains(event.title) && event.maxCapacity > 0}" type="submit" class="save-btn">Register</button>
+                                <button th:if="${joinedEventNames.contains(event.title)}" type="submit" class="joined-button" disabled="disabled">Registered</button>
+                                <button th:if="${!joinedEventNames.contains(event.title) && event.maxCapacity <= 0}" type="button" class="joined-button" disabled="disabled">No Seats Available</button>
+
+                            </form>
+                            <div id="donationButtonsContainer">
+                                <h3 style="display: inline-block;">Looking to Contribute ? </h3>
+                                <br>
+                                <button class="donate-button" onclick="openResourceDonationModal()" style="display: inline-block; margin-right: 10px; margin-bottom: 5px;">Donate Resources</button>
+                                <form action="/donate" method="get" style="display: inline-block;">
+                                    <input type="hidden" th:value="${event.title}" name="eventTitle" />
+                                    <input type="hidden" th:value="${communityName}" name="communityName" />
+                                    <button type="submit" class="donate-button">Donate Money</button>
+                                </form>
+                            </div>
+                            <!-- Donation Modal -->
+                            <div id="resourceDonationModal" class="modal">
+                                <div class="modal-content">
+                                    <span class="close" onclick="closeResourceDonationModal()">&times;</span>
+                                    <h2>Resource Donation Form</h2>
+                                    <form th:action="@{/donate_resource}" method="post">
+                                        <label>Description:</label>
+                                        <input type="text" name="description" required><br>
+
+                                        <!--                                        <label>Type of Resource:</label>-->
+                                        <!--                                        <input type="text" name="resourceType" required><br>-->
+                                        <label>Type of Resource:</label>
+                                        <select name="resourceType" required>
+                                            <option value="equipments">Equipments</option>
+                                            <option value="materials">Materials</option>
+                                            <option value="catering">Catering</option>
+                                            <option value="labour">Labour</option>
+                                            <option value="space_facility">Space/Facility</option>
+                                        </select><br>
+
+                                        <label>Quantity:</label>
+                                        <input type="number" name="quantity" min="0" required><br>
+                                        <input type="hidden" name="communityName" th:value="${communityName}" />
+                                        <input type="hidden" name="eventTitle" th:value="${event.title}" />
+                                        <input type="hidden" name="eventName" th:value="${event.title}" />
+                                        <button type="submit">Submit</button>
+                                    </form>
+                                </div>
+                            </div>
+
+                        </div>
+<br>
+
+                    <div th:if="${isLeader}" class="post-footer">
+                        <button class="edit-btn">Edit</button>
+                        <form action="/editEvent" method="post" class="edit-form" style="display: none;" enctype="multipart/form-data">
+                            <input type="hidden" name="eventId" th:value="${event.id}" />
+                            <label for="editEventTitle">Edit Title:</label>
+                            <input type="text" id="editEventTitle" name="newTitle" th:value="${event.title}" />
+                            <br>
+                            <label for="editEventContent">Edit Description:</label>
+                            <textarea name="newContent" id="editEventContent" rows="4" cols="50" required class="textarea-fit-width" th:text="${event.content}"></textarea>
+                            <br>
+                            <span>Location: <span th:text="${event.location}"></span></span>
+                            <br>
+                            <span>Date: <span th:text="${#dates.format(event.eventDate, 'dd-MM-yyyy')}"></span></span>
+                            <br>
+                            <span>Time: <span th:text="${event.eventTime}"></span></span>
+                            <br>
+                            <span>Seats Remaining: <span th:text="${event.maxCapacity}"></span></span>
+                            <br>
+                            <label for="eventImage">Update Image:</label>
+                            <input type="file" id="editEventImage" name="eventImage" accept="image/*" onchange="validateEditEventImageSize()">
+                            <br>
+                            <input type="checkbox" id="deleteEventImageCheckbox" name="deleteEventImage">
+                            <label for="deleteEventImageCheckbox">Delete Image</label>
+                            <span id="editEventImageSizeError" style="color: red; display: none;">Image dimensions must be above 1920 x 1280 pixels.</span>
+                            <br>
+                            <button type="submit" class="save-btn">Save</button>
+                            <button type="submit" formaction="/deleteEvent" formmethod="post" class="delete-btn">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="donations">
+                <div class="header-container">
+                    <h1>Member Donations</h1>
+                </div>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="donation : ${donations}">
+                        <!--                        <td><img th:if="${donation.user.profile_photo != null}" th:src="'data:image/jpeg;base64,' + ${T(org.springframework.util.Base64Utils).encodeToString(donation.user.profile_photo)}" alt="Profile Picture" /></td>-->
+                        <!--                        <td th:text="${donation.user.firstName + ' ' + donation.user.lastName + ' Just became a sponser, thanks!'}"></td>-->
+                        <!--                        <td th:text="${donation.eventTitle}"></td>-->
+                        <div class="record">
+                            <td>
+                                <img class="profile_img" th:if="${donation.user.profile_photo != null}" th:src="'data:image/jpeg;base64,' + ${T(org.springframework.util.Base64Utils).encodeToString(donation.user.profile_photo)}" alt="Profile Picture" />
+                                <img class="profile_img" th:unless="${donation.user.profile_photo != null}" th:src="@{/images/avatardefault_92824.png}" alt="Default Avatar">
+                                &nbsp;
+                                <span class="record_content" th:if="${donation.description == 'money_donation'}" th:text="${donation.user.firstName + ' ' + donation.user.lastName + ' Just made a monetary donation towards an event. Thanks!!!'}" />
+                                <span class="record_content" th:unless="${donation.description == 'money_donation'}" th:text="${donation.user.firstName + ' ' + donation.user.lastName + ' Just became an In-Kind sponser, thanks for contributing for a better conduct!!'}" />
+                                <br>
+                                &nbsp;
+                                <span th:text="${donation.eventTitle}"></span>
+                            </td>
+                        </div>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const tabs = document.querySelectorAll('.nav-tabs a');
+
+                function storeActiveTab(tabId) {
+                    localStorage.setItem('activeTab', tabId);
+                }
+
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const targetId = this.getAttribute('href');
+                        const targetTab = document.querySelector(targetId);
+
+                        tabs.forEach(tab => {
+                            tab.parentElement.classList.remove('active');
+                        });
+
+                        this.parentElement.classList.add('active');
+
+                        document.querySelectorAll('.tab-pane').forEach(tabContent => {
+                            tabContent.classList.remove('active');
+                            tabContent.classList.remove('show');
+                        });
+
+                        targetTab.classList.add('active');
+                        targetTab.classList.add('show');
+
+                        storeActiveTab(targetId);
+                    });
+                });
+
+                function retrieveActiveTab() {
+                    const activeTabId = localStorage.getItem('activeTab');
+                    if (activeTabId) {
+                        const activeTab = document.querySelector('a[href="' + activeTabId + '"]');
+                        if (activeTab) {
+                            activeTab.click();
+                        }
+                    }
+                }
+
+                retrieveActiveTab();
+            });
+        </script>
+
+        <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editButtons = document.querySelectorAll('.edit-btn');
+
+        editButtons.forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                const form = this.parentElement.querySelector('.edit-form');
+                form.style.display = 'block';
+                event.stopPropagation();
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            const forms = document.querySelectorAll('.edit-form');
+            forms.forEach(function (form) {
+                if (!form.contains(event.target)) {
+                    form.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tabs = document.querySelectorAll('.nav-tabs a');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function (event) {
+                event.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetTab = document.querySelector(targetId);
+
+                tabs.forEach(tab => {
+                    tab.parentElement.classList.remove('active');
+                });
+
+                this.parentElement.classList.add('active');
+
+                document.querySelectorAll('.tab-pane').forEach(tabContent => {
+                    tabContent.classList.remove('active');
+                    tabContent.classList.remove('show');
+                });
+
+                targetTab.classList.add('active');
+                targetTab.classList.add('show');
+            });
+        });
+    });
+</script>
+
+
+    <script>
+function openMembersModal() {
+  document.getElementById('membersModal').style.display = 'block';
+}
+</script>
+
+<div class="community-container">
+    <div id="createPostModal" class="modal">
+        <div class="modal-content" style="position: absolute; top: 100px; left: 50%;
+         transform: translateX(-50%); padding: 15px; width: 70%; height: 70%;">
+            <span onclick="closeCreatePostModal()" style="float: right; cursor: pointer;">&times;</span>
+            <form id="createPostForm" action="/create-post" method="post" enctype="multipart/form-data">
+                <label for="postTitle">Post Title:</label>
+                <textarea id="postTitle" name="postTitle" style="width: 100%; height: 100%; overflow: auto;"
+                          rows="1" cols="30" required></textarea>
+                <label for="postContent">Post Content:</label>
+                <textarea id="postContent" name="postContent" style="width: 100%; height: 100%; overflow: auto;"
+                          rows="5" cols="30" required></textarea>
+                <br>
+                <input type="hidden" name="communityName" th:value="${communityName}" />
+                <label for="postImage">Upload Image:</label>
+                <input type="file" id="postImage" name="postImage" accept="image/*" onchange="validateImageSize()">
+                <br>
+                <span id="imageSizeError" style="color: red; display: none;">Image dimensions must be above 1920 x 1280 pixels.</span>
+                <button type="submit" id="submitButton" class = "join-button">Create Post</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <div class="community-container">
+        <div id="createEventModal" class="modal" style="height:100%">
+            <div class="modal-content" style="position: absolute; left: 50%;
+         transform: translateX(-50%); padding: 5px; width: 70%; height: 150%;">
+                <span onclick="closeCreateEventModal()" style="float: right; cursor: pointer;">&times;</span>
+                <form id="createEventForm" action="/create-event" method="post" enctype="multipart/form-data">
+                    <label for="eventTitle">Event Name:</label>
+                    <textarea id="eventTitle" name="eventTitle" style="width: 100%; height: 100%; overflow: auto;"
+                              rows="1" cols="30" required></textarea>
+                    <label for="eventContent">Event Description:</label>
+                    <textarea id="eventContent" name="eventContent" style="width: 100%; height: 100%; overflow: auto;"
+                              rows="3" cols="30" required></textarea>
+                    <br>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="eventLocation">Location:</label>
+                        <textarea id="eventLocation" name="eventLocation" style="width: 100%; height: 100%; overflow: auto;" required></textarea>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="eventDate">Date:</label>
+                        <input type="date" id="eventDate" name="eventDate" required>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="eventTime">Time:</label>
+                        <input type="time" id="eventTime" name="eventTime" required>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="eventCapacity">Maximum Capacity:</label>
+                        <input type="number" id="eventCapacity" name="eventCapacity" required>
+                    </div>
+                    <input type="hidden" name="communityName" th:value="${communityName}" />
+                    <label for="eventImage">Upload Image:</label>
+                    <input type="file" id="eventImage" name="eventImage" accept="image/*" onchange="validateEventImageSize()">
+                    <br>
+                    <span id="eventImageSizeError" style="color: red; display: none;">Image dimensions must be above 1920 x 1280 pixels.</span>
+                    <button type="submit" id="eventSubmitButton" class = "join-button">Create Event</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openCreatePostModal() {
+            document.getElementById("createPostModal").style.display = "block";
+        }
+
+        function closeCreatePostModal() {
+          document.getElementById('createPostModal').style.display = 'none';
+        }
+
+          function openCreateEventModal() {
+            document.getElementById("createEventModal").style.display = "block";
+        }
+
+        function closeCreateEventModal() {
+          document.getElementById('createEventModal').style.display = 'none';
+        }
+        function openResourceDonationModal() {
+            var modal = document.getElementById("resourceDonationModal");
+            modal.style.display = "block";
+        }
+        // Function to close the resource donation modal
+        function closeResourceDonationModal() {
+            var modal = document.getElementById("resourceDonationModal");
+            modal.style.display = "none";
+        }
+
+
+    </script>
+
+    <script>
+        function validateImageSize() {
+       var fileInput = document.getElementById('postImage');
+       var imageSizeError = document.getElementById('imageSizeError');
+       var submitButton = document.getElementById('submitButton');
+
+       if (fileInput.files.length > 0) {
+           var file = fileInput.files[0];
+           var img = new Image();
+           img.onload = function () {
+               if (img.width < 1920 || img.height < 1280) {
+                   imageSizeError.style.display = 'inline';
+                   submitButton.disabled = true;
+                   fileInput.value = '';
+               } else {
+                   imageSizeError.style.display = 'none';
+                   submitButton.disabled = false;
+               }
+           };
+           img.src = window.URL.createObjectURL(file);
+       }
+   }
+
+   function submitForm() {
+       var imageSizeError = document.getElementById('imageSizeError');
+       if (imageSizeError.style.display === 'none') {
+           document.getElementById('createCommunityForm').submit();
+       }
+   }
+    </script>
+
+    <script>
+        function validateEditImageSize() {
+           var fileInput = document.getElementById('editPostImage');
+           var imageSizeError = document.getElementById('editImageSizeError');
+
+           if (fileInput.files.length > 0) {
+               var file = fileInput.files[0];
+               var img = new Image();
+               img.onload = function () {
+                   if (img.width < 1920 || img.height < 1280) {
+                       imageSizeError.style.display = 'inline';
+                       fileInput.value = '';
+                   } else {
+                       imageSizeError.style.display = 'none';
+                   }
+               };
+               img.src = window.URL.createObjectURL(file);
+           }
+       }
+    </script>
+
+    <script>
+        function validateEventImageSize() {
+       var fileInput = document.getElementById('eventImage');
+       var imageSizeError = document.getElementById('eventImageSizeError');
+       var submitButton = document.getElementById('eventSubmitButton');
+
+       if (fileInput.files.length > 0) {
+           var file = fileInput.files[0];
+           var img = new Image();
+           img.onload = function () {
+               if (img.width < 1920 || img.height < 1280) {
+                   imageSizeError.style.display = 'inline';
+                   submitButton.disabled = true;
+                   fileInput.value = '';
+               } else {
+                   imageSizeError.style.display = 'none';
+                   submitButton.disabled = false;
+               }
+           };
+           img.src = window.URL.createObjectURL(file);
+       }
+   }
+
+   function submitForm() {
+       var imageSizeError = document.getElementById('eventImageSizeError');
+       if (imageSizeError.style.display === 'none') {
+           document.getElementById('createEventForm').submit();
+       }
+   }
+    </script>
+
+        <script>
+            function validateEditEventImageSize() {
+               var fileInput = document.getElementById('editEventImage');
+               var imageSizeError = document.getElementById('editEventImageSizeError');
+
+               if (fileInput.files.length > 0) {
+                   var file = fileInput.files[0];
+                   var img = new Image();
+                   img.onload = function () {
+                       if (img.width < 1920 || img.height < 1280) {
+                           imageSizeError.style.display = 'inline';
+                           fileInput.value = '';
+                       } else {
+                           imageSizeError.style.display = 'none';
+                       }
+                   };
+                   img.src = window.URL.createObjectURL(file);
+               }
+           }
+        </script>
+
+
+    <script>
+        function openModal() {
+          document.getElementById('imageModal').style.display = 'block';
+        }
+
+        function closeModal() {
+          document.getElementById('imageModal').style.display = 'none';
+        }
+
+       window.onclick = function(event) {
+      var membersModal = document.getElementById('membersModal');
+      var imageModal = document.getElementById('imageModal');
+      var createPostModal = document.getElementById('createPostModal');
+      var createEventModal = document.getElementById('createEventModal');
+
+       if (event.target == membersModal) {
+        membersModal.style.display = 'none';
+      }
+      if (event.target == imageModal) {
+        imageModal.style.display = 'none';
+      }
+       if (event.target == createPostModal) {
+        createPostModal.style.display = 'none';
+      }
+         if (event.target == createEventModal) {
+        createEventModal.style.display = 'none';
+      }
+    }
+
+    </script>
+        <script>
+            var stripe = Stripe('pk_test_51OtEnrEkAeeAylyBCkhN48814xbFsb8J2kSsFqnajpRWvTUTrz8HYUaqxjeg6II7F5P9ANw7Ij87bJ5xcgZG8DQ6000Fam5InC');
+        </script>
+
+</div>
+</div>
+<footer class="footer-distributed">
+
+    <div class="footer-left">
+
+        <h3><img src="../images/logo.png" class="responsivej"></h3>
+
+        <p class="footer-links">
+            <a href="#contact" class="link-1" th:href="@{/about}">About Us</a>
+            <a href="mailto:weconnect056@gmail.com">Contact</a>
+        </p>
+
+
+    </div>
+
+    <div class="footer-center">
+        <br>
+        <div>
+            <a href="https://goo.gl/maps/3SfLA6mi4iy8PGAH7"><i  id="social-loc" class="fa fa-map-marker"></i></a>
+            <p>Nova Scotia, Canada</p>
+        </div>
+
+
+
+
+    </div>
+
+    <div class="footer-right">
+
+
+
+
+        <div id="lab_social_icon_footer">
+
+
+
+            <div class="text-center center-block">
+
+                <a href="#"><i id="social-em" class="fa fa-twitter-square fa-3x social"></i></a>
+                <a href="#"><i id="social-li" class="fa fa-facebook-square fa-3x social"></i></a>
+                <a href="#"><i id="social-ig" class="fa fa-instagram fa-3x social"></i></a>
+                <a href="#"><i id="social-yt" class="fa fa-youtube-square fa-3x social"></i></a>
+
+
+            </div>
+
+        </div>
+    </div>
+</footer>
+<script src="https://unpkg.com/aos@next/dist/aos.js" type="text/javascript"></script>
+<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script>
+    AOS.init({
+ offset:400,duration:800
+    })
+</script>
+<script>
+    AOS.init();
+</script>
+</body>
+</html>

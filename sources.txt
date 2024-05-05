@@ -1,0 +1,19 @@
+SOURCES
+
+1) Placeholder images taken from "https://unsplash.com/"
+
+2) Placeholder text taken from "https://www.lipsum.com/"
+
+3) The following classes were adapted from "https://github.com/RameshMF/registration-login-spring-boot-security-thymeleaf-hibernate"
+
+        - SecurityConfiguration.java
+        - UserRegistrationController.java
+        - User.java
+        - Role.java
+        - UserRepository.java
+        - UserService.java
+        - UserServiceImpl.java
+        - UserRegistrationDto.java
+        - login.html
+        - registration.html
+

@@ -1,0 +1,786 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommunityController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">weConnect</a> &gt; <a href="index.source.html" class="el_package">com.webapp.weconnect.controller</a> &gt; <span class="el_source">CommunityController.java</span></div><h1>CommunityController.java</h1><pre class="source lang-java linenums">package com.webapp.weconnect.controller;
+
+import com.webapp.weconnect.model.*;
+import com.webapp.weconnect.repository.*;
+import com.webapp.weconnect.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.InputStream;
+import java.lang.reflect.Member;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.io.IOException;
+import com.webapp.weconnect.service.CommunityService;
+
+@Controller
+<span class="fc" id="L44">public class CommunityController {</span>
+
+    @Autowired
+    private CommunityRepository communityRepository;
+    @Autowired
+    private EventMemberRepository eventMemberRepository;
+    @Autowired
+    private CommunityImageRepository communityImageRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PostService postService;
+    @Autowired
+    private EventService eventService;
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private MessageRepository messageRepository;
+    @Autowired
+    private EventRepository eventRepository;
+    @Autowired
+    private CommunityService communityService;
+    @Autowired
+    private CommunityImageService communityImageService;
+    @Autowired
+    private CommentService commentService;
+    @Autowired
+    private CommentRepository commentRepository;
+    @Value(&quot;${file.storage.location}&quot;)
+    private String fileStorageLocation;
+
+    @Autowired
+    private DonationRepository donationRepository;
+
+    /**
+     * Handles HTTP POST requests to create a new post for a community.
+     * So that a new post can be added to community.
+     * @param request the HttpServletRequest containing post parameters
+     * @return a redirection to the current page
+     */
+    @PostMapping(&quot;/create-post&quot;)
+    public String createPost(HttpServletRequest request) {
+        // Extract post parameters from the request
+<span class="fc" id="L87">        String postTitle = request.getParameter(&quot;postTitle&quot;);</span>
+<span class="fc" id="L88">        String postContent = request.getParameter(&quot;postContent&quot;);</span>
+<span class="fc" id="L89">        MultipartFile postImage = ((MultipartHttpServletRequest) request).getFile(&quot;postImage&quot;);</span>
+<span class="fc" id="L90">        String communityName = request.getParameter(&quot;communityName&quot;);</span>
+
+        // Retrieve authentication information
+<span class="fc" id="L93">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L94">        String currentUserEmail = authentication.getName();</span>
+<span class="fc" id="L95">        User currentUser = userRepository.findByEmail(currentUserEmail);</span>
+<span class="fc" id="L96">        Optional&lt;Boolean&gt; isLeaderOptional = communityRepository.getIsLeader(communityName, currentUser.getEmail());</span>
+
+        //check if the currently logged user is a community leader before posting
+<span class="pc bpc" id="L99" title="2 of 4 branches missed.">        if (isLeaderOptional.isPresent() &amp;&amp; isLeaderOptional.get()) {</span>
+            // If the user is a leader, create the post
+<span class="fc" id="L101">            postService.createPost(postTitle, postContent, postImage, communityName);</span>
+        }
+
+        // Redirect to the current page
+<span class="fc" id="L105">        String referer = request.getHeader(&quot;Referer&quot;);</span>
+<span class="fc" id="L106">        return &quot;redirect:&quot; + referer;</span>
+    }
+
+    /**
+     * Handles HTTP GET requests to retrieve posts for a specific community.
+     * So that the users can see all the posts made by the leader.
+     * @param communityName the name of the community to retrieve posts for
+     * @return a list of messages (posts) for the specified community
+     */
+    @GetMapping(&quot;/get-posts&quot;)
+    @ResponseBody
+    public List&lt;Message&gt; getPosts(@RequestParam String communityName) {
+        //retrieve posts stored in messageRepository to be displayed in the community page
+<span class="fc" id="L119">        return messageRepository.findByCommunityName(communityName);</span>
+    }
+
+    /**
+     * Handles HTTP POST requests to create a new event.
+     * So that users can see the events created for a community.
+     * @param request the HttpServletRequest containing event parameters
+     * @return a redirection to the current page
+     */
+    @PostMapping(&quot;/create-event&quot;)
+    public String createEvent(HttpServletRequest request) {
+        // Extract event parameters from the request
+<span class="fc" id="L131">        String eventTitle = request.getParameter(&quot;eventTitle&quot;);</span>
+<span class="fc" id="L132">        String eventContent = request.getParameter(&quot;eventContent&quot;);</span>
+<span class="fc" id="L133">        MultipartFile eventImage = ((MultipartHttpServletRequest) request).getFile(&quot;eventImage&quot;);</span>
+<span class="fc" id="L134">        String communityName = request.getParameter(&quot;communityName&quot;);</span>
+<span class="fc" id="L135">        String eventLocation = request.getParameter(&quot;eventLocation&quot;);</span>
+<span class="fc" id="L136">        Date eventDate = null;</span>
+        try {
+<span class="fc" id="L138">            eventDate = new SimpleDateFormat(&quot;yyyy-MM-dd&quot;).parse(request.getParameter(&quot;eventDate&quot;));</span>
+<span class="nc" id="L139">        } catch (ParseException e) {</span>
+<span class="nc" id="L140">            e.printStackTrace();</span>
+<span class="fc" id="L141">        }</span>
+<span class="fc" id="L142">        String eventTime = request.getParameter(&quot;eventTime&quot;);</span>
+<span class="fc" id="L143">        Integer maxCapacity = Integer.parseInt(request.getParameter(&quot;eventCapacity&quot;));</span>
+
+        // Retrieve authentication information
+<span class="fc" id="L146">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L147">        String currentUserEmail = authentication.getName();</span>
+<span class="fc" id="L148">        User currentUser = userRepository.findByEmail(currentUserEmail);</span>
+<span class="fc" id="L149">        Optional&lt;Boolean&gt; isLeaderOptional = communityRepository.getIsLeader(communityName, currentUser.getEmail());</span>
+<span class="fc" id="L150">        EventMember newEventMember = new EventMember();</span>
+<span class="fc" id="L151">        newEventMember.setEventName(eventTitle);</span>
+<span class="fc" id="L152">        newEventMember.setEventMember(currentUserEmail);</span>
+<span class="fc" id="L153">        newEventMember.setCommunityName(communityName);</span>
+<span class="fc" id="L154">        eventMemberRepository.save(newEventMember);</span>
+
+       //check if the currently logged user is a community leader before creating the event
+<span class="pc bpc" id="L157" title="2 of 4 branches missed.">        if (isLeaderOptional.isPresent() &amp;&amp; isLeaderOptional.get()) {</span>
+            // If the user is a leader, create the event
+<span class="fc" id="L159">            eventService.createEvent(</span>
+<span class="fc" id="L160">                    eventTitle, eventContent, eventImage, communityName, eventLocation, eventDate, eventTime, maxCapacity);</span>
+        }
+
+        // Redirect back to the referring page
+<span class="fc" id="L164">        String referer = request.getHeader(&quot;Referer&quot;);</span>
+<span class="fc" id="L165">        return &quot;redirect:&quot; + referer;</span>
+    }
+
+    /**
+     * Handles HTTP GET requests to show all communities.
+     * So that, list of community can be shown to user for them to explore.
+     * @param communityName the name of the community to filter by
+     * @param model the Model object to add attributes to
+     * @return the name of the view template to render
+     */
+    @GetMapping(&quot;/&quot;)
+    public String showAllCommunities(@RequestParam(required = false)  String communityName,Model model) {
+        // Retrieve authentication information
+<span class="fc" id="L178">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L179">        String currentUserEmail = authentication.getName();</span>
+
+        // Retrieve all approved communities
+<span class="fc" id="L182">        List&lt;Community&gt; allCommunities = communityService.listApprovedCommunities();</span>
+<span class="fc" id="L183">        List&lt;String&gt; uniqueCommunityNames = getAllUniqueCommunityNames(allCommunities);</span>
+<span class="fc" id="L184">        List&lt;Community&gt; joinedCommunities = communityRepository.findByCreatedBy(currentUserEmail);</span>
+<span class="fc" id="L185">        List&lt;String&gt; joinedCommunityNames = joinedCommunities.stream()</span>
+<span class="fc" id="L186">                .map(Community::getName)</span>
+<span class="fc" id="L187">                .collect(Collectors.toList());</span>
+
+        //display communities in reverse to show the latest communities at the top
+<span class="fc" id="L190">        Collections.reverse(uniqueCommunityNames);</span>
+<span class="fc" id="L191">        model.addAttribute(&quot;communities&quot;, uniqueCommunityNames);</span>
+<span class="fc" id="L192">        model.addAttribute(&quot;joinedCommunityNames&quot;, joinedCommunityNames);</span>
+<span class="fc" id="L193">        model.addAttribute(&quot;communityName&quot;, communityName);</span>
+<span class="fc" id="L194">        return &quot;index&quot;;</span>
+    }
+
+    /**
+     * Retrieves unique community names from a list of communities.
+     * So that only one instance of it is displayed.
+     * @param communities the list of communities
+     * @return a list of unique community names
+     */
+    private List&lt;String&gt; getAllUniqueCommunityNames(List&lt;Community&gt; communities) {
+<span class="fc" id="L204">        return communities.stream()</span>
+<span class="fc" id="L205">                .map(Community::getName)</span>
+<span class="fc" id="L206">                .distinct()</span>
+<span class="fc" id="L207">                .collect(Collectors.toList());</span>
+    }
+
+
+    /**
+     * Handles HTTP GET requests to show communities joined by the current user.
+     * So, only the communities which the user is a part of are shown.
+     * @param model the Model object to add attributes to
+     * @return the name of the view template to render
+     */
+    @GetMapping(&quot;/communities&quot;)
+    public String showCommunity(Model model){
+        // Retrieve authentication information
+<span class="fc" id="L220">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L221">        String currentUserEmail = authentication.getName();</span>
+
+        // Retrieve communities joined by the current user that are approved
+<span class="fc" id="L224">        List&lt;Community&gt; userCommunities = communityRepository.findByCreatedBy(currentUserEmail);</span>
+<span class="fc" id="L225">        List&lt;Community&gt; approvedCommunities = communityService.listApprovedCommunities();</span>
+
+        // Get a set of approved communities
+<span class="fc" id="L228">        Set&lt;String&gt; approvedCommunityNames = approvedCommunities.stream()</span>
+<span class="fc" id="L229">                .map(Community::getName)</span>
+<span class="fc" id="L230">                .collect(Collectors.toSet());</span>
+
+        // Filter joined communities to include only those that are approved
+<span class="fc" id="L233">        List&lt;Community&gt; userApprovedCommunities = userCommunities.stream()</span>
+<span class="fc" id="L234">                .filter(community -&gt; approvedCommunityNames.contains(community.getName()))</span>
+<span class="fc" id="L235">                .collect(Collectors.toList());</span>
+
+        //display communities in reverse to show the latest communities at the top
+<span class="fc" id="L238">        Collections.reverse(userApprovedCommunities);</span>
+<span class="fc" id="L239">        model.addAttribute(&quot;communities&quot;, userApprovedCommunities);</span>
+<span class="fc" id="L240">        return &quot;communities&quot;;</span>
+    }
+
+    /**
+     * Handles HTTP GET requests to view a community.
+     * So, that when user clicks on a community, they can see all the details of that community.
+     * @param communityName the name of the community to view
+     * @param model the Model object to add attributes to
+     * @return the name of the view template to render
+     */
+    @GetMapping(&quot;/viewCommunity&quot;)
+    public String viewCommunity(@RequestParam(&quot;communityName&quot;) String communityName,
+                                Model model) {
+        // Retrieve members of the community
+<span class="fc" id="L254">        List&lt;String&gt; members = communityRepository.findMembersByCommunityName(communityName);</span>
+
+        // Retrieve authentication information
+<span class="fc" id="L257">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L258">        String currentUserEmail = authentication.getName();</span>
+
+        // Check if the current user is a leader of the community
+<span class="fc" id="L261">        Optional&lt;Boolean&gt; isLeaderOptional = communityRepository.getIsLeader(communityName, currentUserEmail);</span>
+<span class="fc" id="L262">        boolean isLeader = isLeaderOptional.orElse(false);</span>
+
+        // Retrieve communities joined by the current user
+<span class="fc" id="L265">        List&lt;Community&gt; joinedCommunities = communityRepository.findByCreatedBy(currentUserEmail);</span>
+<span class="fc" id="L266">        List&lt;String&gt; joinedCommunityNames = joinedCommunities.stream()</span>
+<span class="fc" id="L267">                .map(Community::getName)</span>
+<span class="fc" id="L268">                .collect(Collectors.toList());</span>
+
+        // Retrieve events joined by the current user in the community
+<span class="fc" id="L271">        List&lt;EventMember&gt; joinedEvents = eventMemberRepository.findByEventMemberAndCommunityName(currentUserEmail, communityName);</span>
+<span class="fc" id="L272">        List&lt;String&gt; joinedEventNames = joinedEvents.stream()</span>
+<span class="fc" id="L273">                .map(EventMember::getEventName)</span>
+<span class="fc" id="L274">                .collect(Collectors.toList());</span>
+
+        // Add attributes to the model
+<span class="fc" id="L277">        model.addAttribute(&quot;joinedCommunityNames&quot;, joinedCommunityNames);</span>
+<span class="fc" id="L278">        model.addAttribute(&quot;joinedEventNames&quot;, joinedEventNames);</span>
+<span class="fc" id="L279">        model.addAttribute(&quot;communityName&quot;, communityName);</span>
+<span class="fc" id="L280">        model.addAttribute(&quot;members&quot;, members);</span>
+<span class="fc" id="L281">        model.addAttribute(&quot;isLeader&quot;, isLeader);</span>
+<span class="fc" id="L282">        model.addAttribute(&quot;postService&quot;, postService);</span>
+
+        // Retrieve messages (posts) for the community
+<span class="fc" id="L285">        List&lt;Message&gt; messages = messageRepository.findByCommunityName(communityName);</span>
+<span class="fc" id="L286">        Collections.reverse(messages);</span>
+<span class="fc" id="L287">        model.addAttribute(&quot;messages&quot;, messages);</span>
+
+        // Retrieve events for the community
+<span class="fc" id="L290">        List&lt;Event&gt; events = eventRepository.findByCommunityName(communityName);</span>
+<span class="fc" id="L291">        Collections.reverse(events);</span>
+<span class="fc" id="L292">        model.addAttribute(&quot;events&quot;, events);</span>
+
+        // Fetch comments for each blog post
+<span class="fc" id="L295">        Map&lt;Long, List&lt;Comment&gt;&gt; commentsMap = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">        for (Message message : messages) {</span>
+<span class="nc" id="L297">            List&lt;Comment&gt; comments = commentRepository.findByMessageId(message.getId());</span>
+<span class="nc" id="L298">            commentsMap.put(message.getId(), comments);</span>
+<span class="nc" id="L299">        }</span>
+<span class="fc" id="L300">        model.addAttribute(&quot;commentsMap&quot;, commentsMap);</span>
+
+        // Fetching the profile photos of user who made a comment
+<span class="fc" id="L303">        List&lt;User&gt; memberProfiles = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">        for(String member : members) {</span>
+<span class="fc" id="L305">            User user = userRepository.findByEmail(member);</span>
+<span class="fc" id="L306">            memberProfiles.add(user);</span>
+<span class="fc" id="L307">        }</span>
+<span class="fc" id="L308">        model.addAttribute(&quot;memberProfiles&quot;, memberProfiles);</span>
+
+        // Checking if user is a member of community
+<span class="fc" id="L311">        boolean isMember = members.contains(currentUserEmail);</span>
+<span class="fc" id="L312">        model.addAttribute(&quot;isMember&quot;, isMember);</span>
+<span class="fc" id="L313">        User currentUser = userRepository.findByEmail(currentUserEmail);</span>
+<span class="fc" id="L314">        model.addAttribute(&quot;currentUser&quot;,currentUser);</span>
+
+        // Retrieve donations for the community
+<span class="fc" id="L317">        List&lt;Donation&gt; donations = donationRepository.getDonationsByCommunityName(communityName);</span>
+<span class="fc" id="L318">        model.addAttribute(&quot;donations&quot;, donations);</span>
+
+        // Return the name of the view template to render
+<span class="fc" id="L321">        return &quot;viewCommunity&quot;;</span>
+    }
+
+    /**
+     * Handles HTTP POST requests to create a new community.
+     * So that a new community is created and sent for approval to the admin before making it available to users.
+     * @param request the HttpServletRequest containing community parameters
+     * @param redirectAttributes the attributes for page redirection
+     * @param model the Model object to add attributes to
+     * @param idFile the MultipartFile for uploading ID file
+     * @return a redirection to the communities page
+     * @throws IOException if an I/O error occurs
+     */
+    @PostMapping(&quot;/createCommunity&quot;)
+    public String createCommunity(HttpServletRequest request, RedirectAttributes redirectAttributes, Model model,
+                                  @RequestParam(&quot;idFile&quot;) MultipartFile idFile)throws IOException {
+        // Fetch community parameters from the request
+<span class="fc" id="L338">        String communityName = request.getParameter(&quot;communityName&quot;);</span>
+<span class="fc" id="L339">        String description = request.getParameter(&quot;description&quot;);</span>
+<span class="fc" id="L340">        MultipartFile uploadImage = ((MultipartHttpServletRequest) request).getFile(&quot;uploadImage&quot;);</span>
+
+        // Retrieve authentication information
+<span class="fc" id="L343">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L344">        String currentUserName = authentication.getName();</span>
+
+        //ensure that the community names are unique upon creation
+<span class="pc bpc" id="L347" title="1 of 4 branches missed.">        if (communityRepository.existsByName(communityName) || communityImageRepository.existsByCommunityName(communityName)) {</span>
+<span class="fc" id="L348">            redirectAttributes.addAttribute(&quot;error&quot;, &quot;A community with the same name already exists! Please choose another name&quot;);</span>
+<span class="fc" id="L349">            return &quot;redirect:/communities&quot;;</span>
+        }
+
+        // Upload ID file if provided
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">        if (!idFile.isEmpty()) {</span>
+            try {
+<span class="fc" id="L355">                String uploadDir = Paths.get(fileStorageLocation, communityName).toString();</span>
+<span class="fc" id="L356">                Path uploadDirPath = Paths.get(uploadDir);</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">                if (Files.notExists(uploadDirPath)) {</span>
+<span class="nc" id="L358">                    Files.createDirectories(uploadDirPath);</span>
+                }
+<span class="fc" id="L360">                String idFileName = idFile.getOriginalFilename();</span>
+<span class="fc" id="L361">                Path filePath = uploadDirPath.resolve(idFileName);</span>
+
+<span class="fc" id="L363">                try (InputStream inputStream = idFile.getInputStream()) {</span>
+<span class="fc" id="L364">                    Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);</span>
+                }
+
+<span class="fc" id="L367">                redirectAttributes.addFlashAttribute(&quot;message&quot;, &quot;File uploaded successfully to community: &quot; + communityName);</span>
+<span class="nc" id="L368">            } catch (IOException e) {</span>
+<span class="nc" id="L369">                e.printStackTrace();</span>
+<span class="nc" id="L370">                redirectAttributes.addFlashAttribute(&quot;message&quot;, &quot;Failed to upload file!&quot;);</span>
+<span class="pc" id="L371">            }</span>
+        } else {
+<span class="nc" id="L373">            redirectAttributes.addFlashAttribute(&quot;message&quot;, &quot;Please select a file to upload.&quot;);</span>
+        }
+
+        // Create a new community object
+<span class="fc" id="L377">        Community newCommunity = new Community();</span>
+<span class="fc" id="L378">        newCommunity.setName(communityName);</span>
+<span class="fc" id="L379">        newCommunity.setCreatedBy(currentUserName);</span>
+<span class="fc" id="L380">        newCommunity.setIsLeader(true);</span>
+<span class="fc" id="L381">        communityRepository.save(newCommunity);</span>
+
+        try {
+<span class="fc" id="L384">            byte[] imageBytes = uploadImage.getBytes();</span>
+<span class="fc" id="L385">            CommunityImage newCommunityImage = new CommunityImage();</span>
+<span class="fc" id="L386">            newCommunityImage.setCommunityName(communityName);</span>
+<span class="fc" id="L387">            newCommunityImage.setCommunityImage(imageBytes);</span>
+<span class="fc" id="L388">            newCommunityImage.setCommunityDescription(description);</span>
+<span class="fc" id="L389">            communityImageRepository.save(newCommunityImage);</span>
+<span class="nc" id="L390">        } catch (IOException e) {</span>
+<span class="nc" id="L391">            e.printStackTrace();</span>
+<span class="fc" id="L392">        }</span>
+
+        // Add attributes to the model
+<span class="fc" id="L395">        model.addAttribute(&quot;communityName&quot;, communityName);</span>
+<span class="fc" id="L396">        model.addAttribute(&quot;description&quot;, description);</span>
+<span class="fc" id="L397">        model.addAttribute(&quot;uploadImage&quot;, uploadImage);</span>
+
+        // Redirect to the communities page
+<span class="fc" id="L400">        return &quot;redirect:/communities&quot;;</span>
+    }
+
+    /**
+     * Handles HTTP POST requests to join a community.
+     * So that a user can be added to that community as a member of that community.
+     * @param communityName the name of the community to join
+     * @param request the HttpServletRequest containing request parameters
+     * @param redirectAttributes the RedirectAttributes for page redirection
+     * @return a redirection to the current page
+     */
+    @PostMapping(&quot;/joinCommunity&quot;)
+    public String joinCommunity(@RequestParam String communityName, HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        try {
+            // Retrieve authentication information
+<span class="fc" id="L415">            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L416">            String currentUserName = authentication.getName();</span>
+
+            // Create a new community object
+<span class="fc" id="L419">            Community newCommunity = new Community();</span>
+<span class="fc" id="L420">            newCommunity.setName(communityName);</span>
+<span class="fc" id="L421">            newCommunity.setCreatedBy(currentUserName);</span>
+
+            // Save details of member and the community they joined
+<span class="fc" id="L424">            communityRepository.save(newCommunity);</span>
+
+            // Redirect back to the current page
+<span class="fc" id="L427">            String referer = request.getHeader(&quot;Referer&quot;);</span>
+<span class="fc" id="L428">            return &quot;redirect:&quot; + referer;</span>
+<span class="fc" id="L429">        } catch (DataIntegrityViolationException e) {</span>
+            // Handle the case where the user is already a member of the community
+<span class="fc" id="L431">            redirectAttributes.addAttribute(&quot;error&quot;, &quot;You are already a member of this community!&quot;);</span>
+<span class="fc" id="L432">            String referer = request.getHeader(&quot;Referer&quot;);</span>
+<span class="fc" id="L433">            return &quot;redirect:&quot; + referer;</span>
+        }
+    }
+
+    /**
+     * Handles HTTP POST requests to leave a community.
+     * So, that if a user wants to leave a community, then he can leave it easily.
+     * @param communityName the name of the community to leave
+     * @param request the HttpServletRequest containing request parameters
+     * @param redirectAttributes the RedirectAttributes for page redirection
+     * @return a redirection to the current page
+     */
+    @PostMapping(&quot;/leaveCommunity&quot;)
+    public String leaveCommunity(@RequestParam String communityName, HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        try {
+            // Retrieve authentication information
+<span class="fc" id="L449">            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L450">            String currentUserName = authentication.getName();</span>
+
+            // Delete details of the member and their associated community
+<span class="fc" id="L453">            communityRepository.deleteByCommunityNameAndCreatedBy(communityName,currentUserName);</span>
+
+            // Redirect back to the referring page
+<span class="fc" id="L456">            String referer = request.getHeader(&quot;Referer&quot;);</span>
+<span class="fc" id="L457">            return &quot;redirect:&quot; + referer;</span>
+<span class="nc" id="L458">        } catch (DataIntegrityViolationException e) {</span>
+            // Handle the case where there is an error in leaving the community
+<span class="nc" id="L460">            redirectAttributes.addAttribute(&quot;error&quot;, &quot;Unable to leave community!&quot;);</span>
+<span class="nc" id="L461">            String referer = request.getHeader(&quot;Referer&quot;);</span>
+<span class="nc" id="L462">            return &quot;redirect:&quot; + referer;</span>
+        }
+    }
+
+    /**
+     * Handles HTTP POST requests to join an event.
+     * So that user can register for an event that is about to happen, which is organized by that community.
+     * @param request the HttpServletRequest containing event parameters
+     * @param redirectAttributes the RedirectAttributes for page redirection
+     * @return a redirection to the current page
+     */
+    @PostMapping(&quot;/joinEvent&quot;)
+    public String joinEvent(HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        try {
+            // Retrieve authentication information
+<span class="fc" id="L477">            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L478">            String currentUserName = authentication.getName();</span>
+
+            // Retrieve community and event parameters from the request
+<span class="fc" id="L481">            String communityName = request.getParameter(&quot;communityName&quot;);</span>
+<span class="fc" id="L482">            String eventName = request.getParameter(&quot;eventName&quot;);</span>
+<span class="fc" id="L483">            Long eventId = Long.parseLong(request.getParameter(&quot;eventId&quot;));</span>
+<span class="fc" id="L484">            Date eventDate = new SimpleDateFormat(&quot;MMM dd, yyyy&quot;).parse(request.getParameter(&quot;eventDate&quot;));</span>
+<span class="fc" id="L485">            String eventTime = request.getParameter(&quot;eventTime&quot;);</span>
+<span class="fc" id="L486">            String eventLocation = request.getParameter(&quot;eventLocation&quot;);</span>
+
+            // Create a new event member and set its details
+<span class="fc" id="L489">            EventMember newEventMember = new EventMember();</span>
+<span class="fc" id="L490">            newEventMember.setEventMember(currentUserName);</span>
+<span class="fc" id="L491">            newEventMember.setCommunityName(communityName);</span>
+<span class="fc" id="L492">            newEventMember.setEventName(eventName);</span>
+<span class="fc" id="L493">            eventMemberRepository.save(newEventMember);</span>
+
+            // Update event capacity and send confirmation email
+<span class="fc" id="L496">            Optional&lt;Event&gt; optionalEvent = eventRepository.findById(eventId);</span>
+<span class="pc bpc" id="L497" title="1 of 2 branches missed.">            if (optionalEvent.isPresent()) {</span>
+<span class="fc" id="L498">                Event event = optionalEvent.get();</span>
+<span class="fc" id="L499">                int updatedCapacity = event.getMaxCapacity() - 1;</span>
+<span class="fc" id="L500">                event.setMaxCapacity(updatedCapacity);</span>
+<span class="fc" id="L501">                eventRepository.save(event);</span>
+
+<span class="fc" id="L503">                SimpleDateFormat dateFormat = new SimpleDateFormat(&quot;MMM dd, yyyy&quot;);</span>
+<span class="fc" id="L504">                String formattedDate = dateFormat.format(eventDate);</span>
+<span class="fc" id="L505">                String subject = &quot;Event Registration Confirmation&quot;;</span>
+<span class="fc" id="L506">                String message = &quot;You have successfully registered for &quot; + eventName</span>
+                        + &quot; on &quot; + formattedDate + &quot; &quot; + eventTime + &quot; at &quot; + eventLocation + &quot;.&quot;;
+<span class="fc" id="L508">                emailService.sendEmail(currentUserName, subject, message);</span>
+            }
+
+            // Redirect back to the current page
+<span class="fc" id="L512">            String referer = request.getHeader(&quot;Referer&quot;);</span>
+<span class="fc" id="L513">            return &quot;redirect:&quot; + referer;</span>
+<span class="nc" id="L514">        } catch (ParseException | DataIntegrityViolationException e) {</span>
+            // Handle errors when registering for an event
+<span class="nc" id="L516">            redirectAttributes.addAttribute(&quot;error&quot;, &quot;An error occurred while processing your request.&quot;);</span>
+<span class="nc" id="L517">            return &quot;redirect:/&quot;;</span>
+        }
+    }
+
+    /**
+     * Handles HTTP GET requests to retrieve the image associated with a community.
+     * So that the community image can be displayed to users on the community page.
+     * @param communityName the name of the community to retrieve the image for
+     * @return a ResponseEntity containing the image data, content type, and HTTP status
+     */
+    @GetMapping(&quot;/getImage&quot;)
+    public ResponseEntity&lt;byte[]&gt; getImage(@RequestParam(&quot;communityName&quot;) String communityName) {
+        // Retrieve image data for the community
+<span class="fc" id="L530">        byte[] imageData = communityImageService.getImageStringByCommunityName(communityName);</span>
+
+        // Set response headers
+<span class="fc" id="L533">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L534">        headers.setContentType(MediaType.IMAGE_JPEG);</span>
+
+        // Return ResponseEntity with image data, content type, and HTTP status
+<span class="fc" id="L537">        return new ResponseEntity&lt;&gt;(imageData, headers, HttpStatus.OK);</span>
+    }
+
+    /**
+     * Handles HTTP GET requests to retrieve the description associated with a community.
+     * So that the users can have an idea of what the community is about and what things they expect from their users.
+     * @param communityName the name of the community to retrieve the description for
+     * @return the description of the community as a string
+     */
+    @GetMapping(&quot;/getDescription&quot;)
+    @ResponseBody
+    public String getDescription(@RequestParam(&quot;communityName&quot;) String communityName) {
+        // Retrieve description for the community
+<span class="fc" id="L550">        String description = communityImageService.getDescriptionByCommunityName(communityName);</span>
+<span class="fc" id="L551">        return description;</span>
+    }
+
+    /**
+     * Handles HTTP GET requests to retrieve the image associated with a post.
+     * Sothat the Blog/Post image can be obtained to be viewed on page.
+     * @param id the ID of the post to retrieve the image for
+     * @return a ResponseEntity containing the image data, content type, and HTTP status
+     */
+    @GetMapping(&quot;/getPostImage&quot;)
+    public ResponseEntity&lt;byte[]&gt; getPostImage(@RequestParam(&quot;id&quot;) Long id) {
+        // Retrieve image data for the post
+<span class="fc" id="L563">        byte[] imageData = postService.getPostImageById(id);</span>
+
+        // Set response headers
+<span class="fc" id="L566">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L567">        headers.setContentType(MediaType.IMAGE_JPEG);</span>
+
+        // Return ResponseEntity with image data, content type, and HTTP status
+<span class="fc" id="L570">        return new ResponseEntity&lt;&gt;(imageData, headers, HttpStatus.OK);</span>
+    }
+
+    /**
+     * Handles HTTP GET requests to retrieve the image associated with an event.
+     * So that it can displayed on the events page to be viewed by the members of that community.
+     * @param id the ID of the event to retrieve the image for
+     * @return a ResponseEntity containing the image data, content type, and HTTP status
+     */
+    @GetMapping(&quot;/getEventImage&quot;)
+    public ResponseEntity&lt;byte[]&gt; getEventImage(@RequestParam(&quot;id&quot;) Long id) {
+        // Retrieve image data for the event
+<span class="fc" id="L582">        byte[] imageData = eventService.getEventImageById(id);</span>
+
+        // Set response headers
+<span class="fc" id="L585">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L586">        headers.setContentType(MediaType.IMAGE_JPEG);</span>
+
+        // Return ResponseEntity with image data, content type, and HTTP status
+<span class="fc" id="L589">        return new ResponseEntity&lt;&gt;(imageData, headers, HttpStatus.OK);</span>
+    }
+
+    /**
+     * Handles HTTP POST requests to edit a post.
+     * So that the community leader can can make changes to the post in the future, if any.
+     * @param request the HttpServletRequest containing post parameters
+     * @param redirectAttributes the RedirectAttributes for page redirection
+     * @return a redirection to the view community page
+     */
+    @PostMapping(&quot;/editPost&quot;)
+    public String editPost(HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        // Retrieve post parameters from the request
+<span class="fc" id="L602">        Long postId = Long.parseLong(request.getParameter(&quot;postId&quot;));</span>
+<span class="fc" id="L603">        String newTitle = request.getParameter(&quot;newTitle&quot;);</span>
+<span class="fc" id="L604">        String newContent = request.getParameter(&quot;newContent&quot;);</span>
+<span class="fc" id="L605">        MultipartFile postImage = null;</span>
+<span class="pc bpc" id="L606" title="1 of 2 branches missed.">        if (request instanceof MultipartHttpServletRequest) {</span>
+<span class="nc" id="L607">            postImage = ((MultipartHttpServletRequest) request).getFile(&quot;postImage&quot;);</span>
+        }
+<span class="fc" id="L609">        String[] deleteImageValues = request.getParameterValues(&quot;deleteImage&quot;);</span>
+<span class="pc bpc" id="L610" title="1 of 4 branches missed.">        boolean deleteImage = deleteImageValues != null &amp;&amp; deleteImageValues.length &gt; 0;</span>
+
+        // Retrieve the post from the database
+<span class="fc" id="L613">        Optional&lt;Message&gt; optionalMessage = messageRepository.findById(postId);</span>
+<span class="pc bpc" id="L614" title="1 of 2 branches missed.">        if (optionalMessage.isPresent()) {</span>
+<span class="fc" id="L615">            Message message = optionalMessage.get();</span>
+
+            // Update post details
+<span class="fc" id="L618">            message.setTitle(newTitle);</span>
+<span class="fc" id="L619">            message.setContent(newContent);</span>
+<span class="fc bfc" id="L620" title="All 2 branches covered.">            if (deleteImage) {</span>
+                // Delete post image
+<span class="fc" id="L622">                message.setPostImage(null);</span>
+<span class="pc bpc" id="L623" title="3 of 4 branches missed.">            } else if (postImage != null &amp;&amp; !postImage.isEmpty()) {</span>
+                // Update post image
+                try {
+<span class="nc" id="L626">                    byte[] imageData = postImage.getBytes();</span>
+<span class="nc" id="L627">                    message.setPostImage(imageData);</span>
+<span class="nc" id="L628">                } catch (IOException e) {</span>
+<span class="nc" id="L629">                    e.printStackTrace();</span>
+<span class="nc" id="L630">                }</span>
+            }
+
+            // Save the updated post
+<span class="fc" id="L634">            messageRepository.save(message);</span>
+
+            // Redirect to the view community page
+<span class="fc" id="L637">            redirectAttributes.addAttribute(&quot;communityName&quot;, message.getCommunityname());</span>
+<span class="fc" id="L638">            return &quot;redirect:/viewCommunity&quot;;</span>
+        } else {
+<span class="nc" id="L640">            return &quot;redirect:/error&quot;;</span>
+        }
+    }
+
+    /**
+     * Handles HTTP POST requests to delete a post.
+     * So that a post can be deleted by the leader if he feels that it is no longer relevant to the community.
+     * @param postId the ID of the post to delete
+     * @return a redirection to the view community page
+     */
+    @PostMapping(&quot;/deletePost&quot;)
+    public String deletePost(@RequestParam(&quot;postId&quot;) Long postId) {
+        // Retrieve the post by its ID
+<span class="fc" id="L653">        Optional&lt;Message&gt; optionalMessage = messageRepository.findById(postId);</span>
+<span class="fc bfc" id="L654" title="All 2 branches covered.">        if (optionalMessage.isPresent()) {</span>
+            // Delete the retrieved post
+<span class="fc" id="L656">            Message message = optionalMessage.get();</span>
+<span class="fc" id="L657">            messageRepository.delete(message);</span>
+
+            // Redirect to the view community page
+<span class="fc" id="L660">            return &quot;redirect:/viewCommunity?communityName=&quot; + message.getCommunityname();</span>
+        } else {
+<span class="fc" id="L662">            return &quot;redirect:/error&quot;;</span>
+        }
+    }
+
+    /**
+     * Handles HTTP POST requests to edit an event.
+     * So that the leader can edit an event that is already hosted, in case if there are any last minutes changes.
+     * @param request the HttpServletRequest containing event parameters
+     * @param redirectAttributes the RedirectAttributes for page redirection
+     * @return a redirection to the view community page
+     */
+    @PostMapping(&quot;/editEvent&quot;)
+    public String editEvent(HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        // Retrieve event parameters from the request
+<span class="fc" id="L676">        Long eventId = Long.parseLong(request.getParameter(&quot;eventId&quot;));</span>
+<span class="fc" id="L677">        String newTitle = request.getParameter(&quot;newTitle&quot;);</span>
+<span class="fc" id="L678">        String newContent = request.getParameter(&quot;newContent&quot;);</span>
+
+        // Retrieve the image associated with the event
+<span class="fc" id="L681">        MultipartFile eventImage = null;</span>
+<span class="pc bpc" id="L682" title="1 of 2 branches missed.">        if (request instanceof MultipartHttpServletRequest) {</span>
+<span class="nc" id="L683">            eventImage = ((MultipartHttpServletRequest) request).getFile(&quot;eventImage&quot;);</span>
+        }
+<span class="fc" id="L685">        String[] deleteImageValues = request.getParameterValues(&quot;deleteEventImage&quot;);</span>
+<span class="pc bpc" id="L686" title="3 of 4 branches missed.">        boolean deleteImage = deleteImageValues != null &amp;&amp; deleteImageValues.length &gt; 0;</span>
+
+        // Retrieve the event by its ID
+<span class="fc" id="L689">        Optional&lt;Event&gt; optionalEvent = eventRepository.findById(eventId);</span>
+<span class="pc bpc" id="L690" title="1 of 2 branches missed.">        if (optionalEvent.isPresent()) {</span>
+            // Update the event details
+<span class="fc" id="L692">            Event event = optionalEvent.get();</span>
+<span class="fc" id="L693">            event.setTitle(newTitle);</span>
+<span class="fc" id="L694">            event.setContent(newContent);</span>
+<span class="pc bpc" id="L695" title="1 of 2 branches missed.">            if (deleteImage) {</span>
+<span class="nc" id="L696">                event.setEventImage(null);</span>
+<span class="pc bpc" id="L697" title="3 of 4 branches missed.">            } else if (eventImage != null &amp;&amp; !eventImage.isEmpty()) {</span>
+                try {
+<span class="nc" id="L699">                    byte[] imageData = eventImage.getBytes();</span>
+<span class="nc" id="L700">                    event.setEventImage(imageData);</span>
+<span class="nc" id="L701">                } catch (IOException e) {</span>
+<span class="nc" id="L702">                    e.printStackTrace();</span>
+<span class="nc" id="L703">                }</span>
+            }
+
+            // Save the updated event
+<span class="fc" id="L707">            eventRepository.save(event);</span>
+<span class="fc" id="L708">            redirectAttributes.addAttribute(&quot;communityName&quot;, event.getCommunityname());</span>
+<span class="fc" id="L709">            return &quot;redirect:/viewCommunity&quot;;</span>
+        } else {
+<span class="nc" id="L711">            return &quot;redirect:/error&quot;;</span>
+        }
+    }
+
+    /**
+     * Handles HTTP POST requests to delete an event.
+     * So that the event can be deleted in an event of some happenings.
+     * @param eventId the ID of the event to delete
+     * @return a redirection to the view community page
+     */
+    @PostMapping(&quot;/deleteEvent&quot;)
+    public String deleteEvent(@RequestParam(&quot;eventId&quot;) Long eventId) {
+        // Retrieve the event by its ID
+<span class="fc" id="L724">        Optional&lt;Event&gt; optionalMessage = eventRepository.findById(eventId);</span>
+<span class="pc bpc" id="L725" title="1 of 2 branches missed.">        if (optionalMessage.isPresent()) {</span>
+            // Delete the event
+<span class="fc" id="L727">            Event event = optionalMessage.get();</span>
+<span class="fc" id="L728">            eventRepository.delete(event);</span>
+
+            // Redirect to the view community page
+<span class="fc" id="L731">            return &quot;redirect:/viewCommunity?communityName=&quot; + event.getCommunityname();</span>
+        } else {
+<span class="nc" id="L733">            return &quot;redirect:/error&quot;;</span>
+        }
+    }
+
+    /**
+     * Method to handle the creation of comments when a user adds a comment on blog
+     * So that a user is able to post a new comment for a blog which they whey want to interact with.
+     * @param messageId the ID of the blog post
+     * @param content the comment message
+     * @param communityName the name of the community
+     * @return view_frontend
+     * */
+    @PostMapping(&quot;/create-comment&quot;)
+    public String createComment(@RequestParam(&quot;messageId&quot;) Long messageId,
+                                @RequestParam(&quot;content&quot;) String content,
+                                @RequestParam(&quot;communityName&quot;) String communityName,
+                                Model model) {
+        try {
+            // Authenticating the user
+<span class="fc" id="L752">            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L753">            String currentUserId = authentication.getName(); // Assuming user ID is stored as username</span>
+<span class="fc" id="L754">            User currentUser = userRepository.findByEmail(currentUserId);</span>
+
+<span class="fc" id="L756">            Optional&lt;Message&gt; optionalMessage = messageRepository.findById(messageId);</span>
+            // Validating the parameters
+<span class="pc bpc" id="L758" title="1 of 2 branches missed.">            if (optionalMessage.isPresent()) {</span>
+<span class="nc" id="L759">                Message message = optionalMessage.get();</span>
+<span class="nc" id="L760">                Comment comment = new Comment();</span>
+<span class="nc bnc" id="L761" title="All 2 branches missed.">                if (!content.isEmpty()) {</span>
+<span class="nc" id="L762">                    comment.setContent(content);</span>
+                }
+<span class="nc bnc" id="L764" title="All 2 branches missed.">                if (message != null) {</span>
+<span class="nc" id="L765">                    comment.setMessage(message);</span>
+                }
+<span class="nc" id="L767">                comment.setUser(currentUser);</span>
+<span class="nc" id="L768">                comment.setCreatedAt(LocalDateTime.now());</span>
+<span class="nc" id="L769">                message.getComments().add(comment);</span>
+<span class="nc" id="L770">                commentService.saveComment(comment);</span>
+            }
+            // Return the community page
+<span class="fc" id="L773">            return &quot;redirect:/viewCommunity?communityName=&quot; + communityName;</span>
+<span class="nc" id="L774">        } catch (IllegalArgumentException e) {</span>
+            // Handle invalid input parameters
+<span class="nc" id="L776">            model.addAttribute(&quot;errorMessage&quot;, &quot;Invalid input parameters: &quot; + e.getMessage());</span>
+<span class="nc" id="L777">            return &quot;redirect:/viewCommunity?communityName=&quot; + communityName;</span>
+<span class="nc" id="L778">        } catch (Exception e) {</span>
+            // Handle other unexpected exceptions
+<span class="nc" id="L780">            model.addAttribute(&quot;errorMessage&quot;, &quot;An unexpected error occurred: &quot; + e.getMessage());</span>
+<span class="nc" id="L781">            return &quot;redirect:/viewCommunity?communityName=&quot; + communityName;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
