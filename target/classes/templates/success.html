@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,400i,700,900&display=swap" rel="stylesheet">
+    <title>Payment Success</title>
+    <link th:href="@{/css/success.css}" rel="stylesheet" />
+</head>
+<body>
+
+<div class="card">
+    <div style="border-radius:200px; height:200px; width:200px; background: #F8FAF5; margin:0 auto;">
+        <i class="checkmark">✓</i>
+    </div>
+    <br>
+    <h1>Payment Success!!</h1>
+    <br><br>
+    <p>We received your generous donation.<br/> Thank you for your kindness and generosity.</p>
+    <br>
+    <h1><u>Transaction Details</u></h1>
+    <br>
+    <table style="width:100%">
+        <tr>
+            <td class="trans_info">Transaction ID</td>
+            <td><span th:text="${transactionId}"></span></td>
+        </tr>
+        <tr>
+            <td class="trans_info">Amount Paid</td>
+            <td>$<span th:text="${amount / 100}"></span></td>
+        </tr>
+        <tr>
+            <td class="trans_info">Payment Method</td>
+            <td><span th:text="${modeOfPayment}"></span></td>
+        </tr>
+        <tr>
+            <td class="trans_info">Customer Name</td>
+            <td><span th:text="${donorName}"></span></td>
+        </tr>
+    </table>
+    <br><br>
+    <form action="/communities" method="get">
+        <button class="homeButton">Back to Home</button>
+    </form>
+    <!--  <p>Transaction ID: <span th:text="${transactionId}"></span></p>-->
+    <!--  <p>Amount Paid: $<span th:text="${amount / 100}"></span></p>-->
+    <!--  <p>Payment Method: <span th:text="${modeOfPayment}"></span></p>-->
+    <!--<p>Customer Name: <span th:text="${donorName}"></span></p>-->
+</div>
+</body>
+</html>
+
+
+<body>
+
+</body>
+</html>

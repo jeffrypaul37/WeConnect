@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeConnect</title>
+    <link rel="icon" type="image/x-icon" href="../images/logo.png">
+    <link th:href="@{/css/communityStyles.css}" rel="stylesheet" />
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+          crossorigin="anonymous">
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header" style="margin-left: -20px;">
+            <a class="navbar-brand" href="#">
+                <img src="../images/logo.png" style="height: 20px; width: auto;">
+            </a>
+            <button type="button" class="navbar-toggle collapsed"
+                    data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+                    aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span> <span
+                    class="icon-bar"></span> <span class="icon-bar"></span> <span
+                    class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#" th:href="@{/}">Home</a>
+            <a class="navbar-brand" href="#" th:href="@{/communities}">My Communities</a>
+            <a class="navbar-brand" href="#" th:href="@{/profile/view}">Profile</a>
+            <a class="navbar-brand" href="#" th:href="@{/about}">About Us</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<style>
+
+    @media (max-width: 767px) {
+        .navbar-brand:nth-last-child(-n+2) {
+            display: none;
+        }
+    }
+</style>
+
+<div style="height: 300px; text-align: center; color: white;">
+    <br><br>
+    <img src="../images/logo.png" alt="Image description"
+         style="width: 75px; height: auto;">
+    <h1 style="color: white;">WeConnect</h1>
+    <h3 style="color: white;">Join your favourite communities around the world!</h3>
+</div>
+
+
+<br><br>
+<h1 style="color: #fff;">Explore</h1>
+<h4 style="color: #fff;">Welcome back <span sec:authentication="principal.username">User</span>!</h4>
+<br><br>
+
+<div class="header-container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="search-filter-container">
+                <div class="row">
+                    <div class="col-md-4">
+                        <input type="text" id="searchBox" class="form-control" placeholder="Search communities...">
+                    </div>
+                    <div class="col-md-4">
+                        <select id="filterType" class="form-control" onchange="updateFilterOptions()">
+                            <option value="">Select Filter Type</option>
+                            <option value="all">All</option>
+                            <option value="location">Location</option>
+                            <option value="interest">Interest</option>
+                            <option value="type">Type</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="filterValue" class="form-control">
+                            <!-- Filter values are dynamically populated based on filterType -->
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button onclick="performSearch()" class="btn btn-primary">Search</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br><br>
+
+<div class="community-grid-container">
+    <ul class="community-grid" id="communityList">
+        <li th:each="communityName : ${communities}">
+            <a th:href="@{'/viewCommunity?communityName=' + ${communityName}}">
+                <div class="community-card">
+                    <img th:if="${@communityImageService.getImageStringByCommunityName(communityName)}"
+                         th:src="@{'/getImage?communityName=' + ${communityName}}"
+                         alt="Community Image">
+                    <img th:unless="${@communityImageService.getImageStringByCommunityName(communityName)}"
+                         src="https://source.unsplash.com/150x150/?nature"
+                         alt="Placeholder Image">
+                    <span th:text="${communityName}"></span>
+                </div>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<script>
+    function updateFilterOptions() {
+        var filterType = document.getElementById('filterType').value;
+        var filterValueDropdown = document.getElementById('filterValue');
+        filterValueDropdown.innerHTML = '<option value="">Select Value</option>'; // Reset
+
+        if (filterType === 'location') {
+            // Example: dynamically populate based on filterType
+            var locations = ['New York', 'San Francisco', 'London']; // Example locations
+            locations.forEach(function(location) {
+                var option = new Option(location, location);
+                filterValueDropdown.add(option);
+            });
+        } else if (filterType === 'interest') {
+            var interests = ['Technology', 'Art', 'Environment']; // Example interests
+            interests.forEach(function(interest) {
+                var option = new Option(interest, interest);
+                filterValueDropdown.add(option);
+            });
+        } else if (filterType === 'type') {
+            var types = ['Community', 'Educational', 'Non-profit']; // Example types
+            types.forEach(function(type) {
+                var option = new Option(type, type);
+                filterValueDropdown.add(option);
+            });
+        }
+    }
+
+    function performSearch() {
+        var title = document.getElementById('searchBox').value;
+        var filterType = document.getElementById('filterType').value;
+        var filterValue = document.getElementById('filterValue').value;
+
+        var endpoint = '/api/search?title=' + encodeURIComponent(title);
+        if (filterType !== 'all' && filterType !== '') {
+            endpoint = '/api/filter?filterType=' + encodeURIComponent(filterType) + '&filterValue=' + encodeURIComponent(filterValue);
+        }
+
+        fetch(endpoint)
+            .then(response => response.json())
+            .then(data => updateCommunityList(data))
+            .catch(error => console.error('Error:', error));
+    }
+
+    function updateCommunityList(communities) {
+        var communityList = document.getElementById('communityList');
+        communityList.innerHTML = '';
+        communities.forEach(community => {
+
+            var imageUrl = '/getImage?communityName=' + encodeURIComponent(community.name);
+            var listItem = `
+        <li>
+            <a href="/viewCommunity?communityName=${encodeURIComponent(community.name)}">
+                <div class="community-card">
+                    <img src="${imageUrl}" onerror="this.onerror=null;this.src='https://source.unsplash.com/150x150/?community';" alt="Community Image">
+                    <span>${community.name}</span>
+                </div>
+            </a>
+        </li>
+    `;
+            communityList.innerHTML += listItem;
+        });
+    }
+
+
+</script>
+<footer class="footer-distributed">
+
+    <div class="footer-left">
+
+        <h3><img src="../images/logo.png" class="responsivej"></h3>
+
+        <p class="footer-links">
+            <a href="#contact" class="link-1" th:href="@{/about}">About Us</a>
+            <a href="mailto:weconnect056@gmail.com">Contact</a>
+        </p>
+
+
+    </div>
+
+    <div class="footer-center">
+        <br>
+        <div>
+            <a href="https://goo.gl/maps/3SfLA6mi4iy8PGAH7"><i  id="social-loc" class="fa fa-map-marker"></i></a>
+            <p>Nova Scotia, Canada</p>
+        </div>
+
+
+
+
+    </div>
+
+    <div class="footer-right">
+
+
+
+
+        <div id="lab_social_icon_footer">
+
+
+
+            <div class="text-center center-block">
+
+                <a href="#"><i id="social-em" class="fa fa-twitter-square fa-3x social"></i></a>
+                <a href="#"><i id="social-li" class="fa fa-facebook-square fa-3x social"></i></a>
+                <a href="#"><i id="social-ig" class="fa fa-instagram fa-3x social"></i></a>
+                <a href="#"><i id="social-yt" class="fa fa-youtube-square fa-3x social"></i></a>
+
+
+            </div>
+
+        </div>
+    </div>
+</footer>
+<script src="https://unpkg.com/aos@next/dist/aos.js" type="text/javascript"></script>
+<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script>
+    AOS.init({
+ offset:400,duration:800
+    })
+</script>
+<script>
+    AOS.init();
+</script>
+</body>
+</html>

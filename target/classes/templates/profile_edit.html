@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile</title>
+    <link rel="icon" type="image/x-icon" href="../images/logo.png">
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+          crossorigin="anonymous">
+    <link th:href="@{/css/profile_edit.css}" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/css/profile_edit.css"/>
+
+</head>
+<body>
+        <nav class="navbar navbar-inverse navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header" style="margin-left: -20px;">
+                    <a class="navbar-brand" href="#">
+                        <img src="../images/logo.png" style="height: 20px; width: auto;">
+                    </a>
+                    <button type="button" class="navbar-toggle collapsed"
+                            data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+                            aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span> <span
+                            class="icon-bar"></span> <span class="icon-bar"></span> <span
+                            class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#" th:href="@{/}">Home</a>
+                    <a class="navbar-brand" href="#" th:href="@{/communities}">My Communities</a>
+                    <a class="navbar-brand" href="#" th:href="@{/profile/view}">Profile</a>
+                    <a class="navbar-brand" href="#" th:href="@{/about}">About Us</a>
+                </div>
+                
+                <div id="navbar" class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <style>
+
+            @media (max-width: 767px) {
+                .navbar-brand:nth-last-child(-n+2) {
+                    display: none;
+                }
+            }
+        </style>
+
+
+<div class="form-details">
+    <h1>Edit Profile</h1>
+    <div class="row">
+    <div th:if="${error}" class="alert alert-danger" role="alert">
+        <p th:text="${error}"></p>
+    </div>
+
+    <form action="/profile/update" method="post" enctype="multipart/form-data">
+        
+        <div class="form-group">
+            <label for="firstName">First Name:</label><br>
+            <input type="text" id="firstName" name="firstName" th:value="${currentUser.firstName}" required/>
+        </div>
+
+        <div class="form-group">
+        <label for="lastName">Last Name:</label><br>
+        <input type="text" id="lastName" name="lastName" th:value="${currentUser.lastName}" required/>
+        </div>
+        
+        <div class="form-group">
+        <label for="email">Email: &nbsp&nbsp&nbsp&nbsp</label><br>
+        <input type="text" id="email" name="email" th:value="${currentUser.email}" readonly/>
+        </div>
+
+        <div class="form-group">
+        <label for="userLocation">Location:</label><br><br/>
+            <!--    <input type="text" id="userLocation" name="userLocation" th:value="${currentUser.location}"/><br/>-->
+            <select id="userLocation" name="userLocation">
+                <option th:each="location : ${locations}" th:value="${location.name}" th:text="${location.name}" th:selected="${location.name == currentUser.location}">Location</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="uploadImage">Profile Photo:</label><br>
+            <input type="file" id="uploadImage" name="uploadImage"/><br/>
+        </div>
+    <!--    <label for="profilePhoto">Profile Photo:</label>-->
+    <!--    <input type="file" id="profilePhoto" name="profilePhoto"/><br/>-->
+
+        <div class="form-group">
+            <div class="col">        
+                <a href="/profile/view" class="button">Back</a>
+
+                <button type="submit" class="button">Update</button>
+                <style>
+                    .button {
+                    display: inline-block;
+                    padding: 15px 50px  15px 50px;
+                    height: 50px;
+                    margin: 10px;
+                    background-color: #f2f2f2;
+                    color: #333;
+                    text-align: center;
+                    text-decoration: none;
+                    border: none;
+                    border-radius: 200px;
+                    justify-content: center;
+                    align-items: center;
+                    cursor: pointer;
+                    transition: background-color 0.3s;
+                    
+                    }
+                    
+                    .button:hover {
+                    background-color: #1eff00;
+                    }
+                </style>
+            </div>                    
+        </div>
+
+    </form>
+</div>
+</div>
+
+    <footer class="footer-distributed">
+
+        <div class="footer-left">
+
+            <h3><img src="../images/logo.png" class="responsivej"></h3>
+
+            <p class="footer-links">
+                <a href="#contact" class="link-1" th:href="@{/about}">About Us</a>
+                <a href="mailto:weconnect056@gmail.com">Contact</a>
+            </p>
+
+
+        </div>
+
+        <div class="footer-center">
+            <br>
+            <div>
+                <a href="https://goo.gl/maps/3SfLA6mi4iy8PGAH7"><i  id="social-loc" class="fa fa-map-marker"></i></a>
+                <p>Nova Scotia, Canada</p>
+            </div>
+
+
+
+
+        </div>
+
+        <div class="footer-right">
+
+
+
+
+            <div id="lab_social_icon_footer">
+
+
+
+                <div class="text-center center-block">
+
+                    <a href="#"><i id="social-em" class="fa fa-twitter-square fa-3x social"></i></a>
+                    <a href="#"><i id="social-li" class="fa fa-facebook-square fa-3x social"></i></a>
+                    <a href="#"><i id="social-ig" class="fa fa-instagram fa-3x social"></i></a>
+                    <a href="#"><i id="social-yt" class="fa fa-youtube-square fa-3x social"></i></a>
+
+
+                </div>
+
+            </div>
+        </div>
+    </footer>
+    <script src="https://unpkg.com/aos@next/dist/aos.js" type="text/javascript"></script>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script>
+        AOS.init({
+     offset:400,duration:800
+        })
+    </script>
+    <script>
+        AOS.init();
+    </script>
+</body>
+</html>
